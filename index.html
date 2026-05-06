@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducaIA - Plataforma de Estudo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- SEÇÃO 1: LOGIN E REGISTRO -->
+        <div id="secao-auth">
+            <h1 id="titulo-auth">Login do Aluno</h1>
+            <div class="campo">
+                <label>Usuário:</label>
+                <input type="text" id="usuario" placeholder="Ex: ze_gamer">
+            </div>
+            <div class="campo">
+                <label>Senha:</label>
+                <input type="password" id="senha">
+            </div>
+            <button onclick="autenticar()" id="btn-auth">Entrar</button>
+            <div class="opcoes-nav">
+                <span id="msg-troca">Não tem conta? <a onclick="alternarTela(false)">Registre-se</a></span>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 2: SELEÇÃO DE CURSO -->
+        <div id="secao-curso" class="hidden">
+            <h2>Área de Estudos</h2>
+            <p id="boas-vindas"></p>
+            
+            <div class="campo">
+                <label>Selecione a Matéria:</label>
+                <select id="materia">
+                    <option value="matematica">Matemática</option>
+                    <option value="fisica">Física</option>
+                    <option value="quimica">Química</option>
+                </select>
+            </div>
+
+            <div class="campo">
+                <label>Nível de Dificuldade:</label>
+                <select id="nivel">
+                    <option value="iniciante">Iniciante</option>
+                    <option value="intermediario">Intermediário</option>
+                    <option value="avancado">Avançado</option>
+                </select>
+            </div>
+
+            <button onclick="carregarAula()">Iniciar Lição</button>
+        </div>
+
+        <!-- SEÇÃO 3: CONTEÚDO / IA -->
+        <div id="secao-aula" class="hidden">
+            <h2 id="titulo-aula"></h2>
+            <div id="conteudo-ia">
+                <!-- O texto da "IA" aparecerá aqui -->
+            </div>
+            <button onclick="voltar()" class="btn-voltar">Voltar ao Menu</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

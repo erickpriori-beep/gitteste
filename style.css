@@ -1,0 +1,104 @@
+:root {
+  --cor-primaria: #2c3e50;
+  --cor-acento: #3498db;
+  --bg: #f4f7f6;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg);
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.hidden {
+  display: none;
+}
+
+h1, h2 {
+  color: var(--cor-primaria);
+  text-align: center;
+  margin-top: 0;
+}
+
+.campo {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #555;
+}
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+input:focus {
+  border-color: var(--cor-acento);
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--cor-acento);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+.btn-voltar {
+  background-color: #95a5a6;
+  margin-top: 10px;
+}
+
+.btn-voltar:hover {
+  background-color: #7f8c8d;
+}
+
+#conteudo-ia {
+  background: #f9f9f9;
+  padding: 15px;
+  border-left: 4px solid var(--cor-acento);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.opcoes-nav {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.opcoes-nav a {
+  color: var(--cor-acento);
+  text-decoration: none;
+  font-weight: bold;
+  cursor: pointer;
+}
