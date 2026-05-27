@@ -1,104 +1,153 @@
 :root {
-  --cor-primaria: #2c3e50;
-  --cor-acento: #3498db;
-  --bg: #f4f7f6;
+  --primaria: #ff4d4d;    /* Vermelho moderno e vivo */
+  --acento: #e60000;      /* Tom de destaque avermelhado */
+  --sucesso: #2ecc71;
+  --erro: #e74c3c;
+  --bg-card: #181212;     /* Fundo escuro do container */
+  --texto: #ffffff;
+  --texto-secundario: #cccccc;
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: var(--bg);
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+
+  /* Gradiente diagonal abstrato imitando perfeitamente o estilo das imagens enviadas */
+  background: linear-gradient(
+    135deg, 
+    #0d0202 0%, 
+    #1f0303 25%, 
+    #4a0505 50%, 
+    #1c0303 75%, 
+    #0d0202 100%
+  );
+
+  background-size: cover;
+  background-attachment: fixed;
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  color: var(--texto);
 }
 
 .container {
   width: 100%;
-  max-width: 400px;
-  background: white;
+  max-width: 450px;
+  background: rgba(24, 18, 18, 0.95); /* Efeito moderno levemente translúcido */
   padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border-radius: 16px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 77, 77, 0.2); /* Borda sutil vermelha */
 }
 
-.hidden {
-  display: none;
+.hidden { display: none; }
+
+h1, h2, h3 { color: var(--primaria); text-align: center; font-weight: 600; }
+
+/* Mantendo o painel do Guia do Aluno com excelente contraste (Fundo claro, texto escuro) */
+#guia-aluno {
+  background: #ffffff !important;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 5px solid var(--primaria);
+  text-align: left;
+  font-size: 0.9em;
 }
 
-h1, h2 {
-  color: var(--cor-primaria);
-  text-align: center;
+#guia-aluno h3 {
+  color: #e60000 !important;
+  text-align: left;
   margin-top: 0;
 }
 
-.campo {
-  margin-bottom: 20px;
+#guia-aluno p, #guia-aluno ul, #guia-aluno li, #guia-aluno b {
+  color: #111111 !important;
 }
 
 label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #555;
+  color: var(--texto-secundario);
+  font-size: 14px;
 }
 
 input, select {
   width: 100%;
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  margin: 10px 0;
+  background-color: #261d1d;
+  border: 1px solid #403030;
+  border-radius: 8px;
   box-sizing: border-box;
-  transition: border-color 0.3s;
+  color: white;
 }
 
-input:focus {
-  border-color: var(--cor-acento);
+input::placeholder {
+  color: #888;
+}
+
+input:focus, select:focus {
   outline: none;
+  border-color: var(--primaria);
 }
 
 button {
   width: 100%;
   padding: 14px;
-  background-color: var(--cor-acento);
+  background-color: var(--acento);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
   font-weight: bold;
-}
-
-button:hover {
-  background-color: #2980b9;
-}
-
-.btn-voltar {
-  background-color: #95a5a6;
   margin-top: 10px;
+  transition: background 0.2s;
 }
 
-.btn-voltar:hover {
-  background-color: #7f8c8d;
+button:hover { 
+  filter: brightness(1.2); 
 }
 
-#conteudo-ia {
-  background: #f9f9f9;
-  padding: 15px;
-  border-left: 4px solid var(--cor-acento);
-  line-height: 1.6;
+.controles-navegacao {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.btn-sair { background-color: #4a3b3b; }
+.btn-voltar { background-color: #5c4a4a; }
+.btn-confirmar { background-color: var(--sucesso); }
+
+#conteudo-aula {
+  background: #261d1d;
+  color: var(--texto);
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 5px solid var(--primaria);
   margin-bottom: 20px;
+  min-height: 100px;
+  text-align: left;
 }
 
-.opcoes-nav {
-  text-align: center;
-  margin-top: 15px;
+#visualizador-db {
+  background: #0d0909;
+  color: #39ff14;
+  padding: 15px;
+  border-radius: 5px;
+  font-size: 13px;
+  overflow-x: auto;
+  border: 1px solid #261d1d;
 }
 
-.opcoes-nav a {
-  color: var(--cor-acento);
-  text-decoration: none;
-  font-weight: bold;
-  cursor: pointer;
+#feedback { text-align: center; font-weight: bold; margin-top: 10px; }
+p { text-align: center; color: var(--texto-secundario); }
+a { color: var(--primaria); text-decoration: none; font-weight: bold; }
+a:hover { text-decoration: underline; }
+
+hr {
+  border: 0;
+  height: 1px;
+  background: #403030;
+  margin: 20px 0;
 }

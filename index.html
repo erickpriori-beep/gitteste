@@ -3,62 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EducaIA - Plataforma de Estudo</title>
+    <title>Educa+ - Plataforma de Ensino</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="container">
-        <!-- SEÇÃO 1: LOGIN E REGISTRO -->
-        <div id="secao-auth">
-            <h1 id="titulo-auth">Login do Aluno</h1>
-            <div class="campo">
-                <label>Usuário:</label>
-                <input type="text" id="usuario" placeholder="Ex: ze_gamer">
-            </div>
-            <div class="campo">
-                <label>Senha:</label>
-                <input type="password" id="senha">
-            </div>
-            <button onclick="autenticar()" id="btn-auth">Entrar</button>
-            <div class="opcoes-nav">
-                <span id="msg-troca">Não tem conta? <a onclick="alternarTela(false)">Registre-se</a></span>
-            </div>
+        <div id="tela-login">
+            <h1>Educa+ - Login</h1>
+            <input type="text" id="login-user" placeholder="Usuário">
+            <input type="password" id="login-pass" placeholder="Senha">
+            <button onclick="fazerLogin()">Entrar</button>
+            <p>Não tem conta? <a href="#" onclick="mostrarTela('tela-registro')">Registre-se</a></p>
         </div>
 
-        <!-- SEÇÃO 2: SELEÇÃO DE CURSO -->
-        <div id="secao-curso" class="hidden">
-            <h2>Área de Estudos</h2>
-            <p id="boas-vindas"></p>
+        <div id="tela-registro" class="hidden">
+            <h1>Criar Conta</h1>
+            <input type="text" id="reg-user" placeholder="Novo Usuário">
+            <input type="password" id="reg-pass" placeholder="Nova Senha">
+            <button onclick="fazerRegistro()">Cadastrar</button>
+            <p><a href="#" onclick="mostrarTela('tela-login')">Voltar ao Login</a></p>
+        </div>
+
+        <div id="tela-cursos" class="hidden">
+            <h2 id="boas-vindas">Bem-vindo!</h2>
             
+            <div id="guia-aluno">
+                <h3>📖 Como funciona o Educa+?</h3>
+                <p>Nossa plataforma conecta-se diretamente a uma <b>API de Inteligência Artificial</b> externa para buscar questões dinâmicas e inteligentes. Isso significa que você terá testes sempre atualizados e nunca fará o mesmo teste duas vezes!</p>
+                
+                <p><b>Estrutura do Curso:</b></p>
+                <ul>
+                    <li><b>Slides:</b> Primeiro, você passa pela teoria e exemplos práticos.</li>
+                    <li><b>Questões:</b> No último slide, a API libera o teste de fixação.</li>
+                </ul>
+
+                <p><b>Os Níveis de Dificuldade:</b></p>
+                <ul>
+                    <li><b>Iniciante (15 questões):</b> Conceitos base e lógica simples. Ideal para introdução.</li>
+                    <li><b>Intermediário (25 questões):</b> Aplicação de fórmulas e resolução de problemas combinados.</li>
+                    <li><b>Avançado (60 questões):</b> Nível de "Masterização". Projetado para ocupar uma aula inteira (50 min), exigindo foco e rapidez.</li>
+                </ul>
+            </div>
+
             <div class="campo">
-                <label>Selecione a Matéria:</label>
+                <label>Escolha a Matéria:</label>
                 <select id="materia">
                     <option value="matematica">Matemática</option>
                     <option value="fisica">Física</option>
                     <option value="quimica">Química</option>
                 </select>
             </div>
-
             <div class="campo">
-                <label>Nível de Dificuldade:</label>
+                <label>Nível do Curso:</label>
                 <select id="nivel">
                     <option value="iniciante">Iniciante</option>
                     <option value="intermediario">Intermediário</option>
                     <option value="avancado">Avançado</option>
                 </select>
             </div>
-
-            <button onclick="carregarAula()">Iniciar Lição</button>
+            <button onclick="carregarAula()">Iniciar Curso</button>
+            <button class="btn-sair" onclick="sair()">Sair</button>
         </div>
 
-        <!-- SEÇÃO 3: CONTEÚDO / IA -->
-        <div id="secao-aula" class="hidden">
+        <div id="tela-aula" class="hidden">
             <h2 id="titulo-aula"></h2>
-            <div id="conteudo-ia">
-                <!-- O texto da "IA" aparecerá aqui -->
+            <div id="conteudo-aula"></div>
+
+            <div class="controles-navegacao">
+                <button id="btn-voltar-slide" onclick="mudarSlide(-1)">Anterior</button>
+                <button id="btn-avancar-slide" onclick="mudarSlide(1)">Próximo</button>
             </div>
-            <button onclick="voltar()" class="btn-voltar">Voltar ao Menu</button>
+
+            <div id="area-teste" class="hidden">
+                <hr>
+                <h3>Teste de Conhecimento (<span id="progresso-n">0</span>/<span id="meta-n">0</span>)</h3>
+                <p id="pergunta-texto"></p>
+                <input type="text" id="resposta-aluno" placeholder="Sua resposta...">
+                <button onclick="verificarResposta()" class="btn-confirmar">Corrigir Resposta</button>
+                <p id="feedback"></p>
+                
+                <div id="sessao-certificado" class="hidden">
+                    <div style="border: 2px solid #27ae60; padding: 15px; margin-top: 15px; border-radius: 8px; background: #142e1b; text-align: center;">
+                        <p style="color: #2ecc71; font-weight: bold;">🏆 PARABÉNS! Você atingiu a meta do curso.</p>
+                        <button onclick="gerarCertificado()" style="background-color: #27ae60; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px;">Baixar meu Certificado</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="mostrarTela('tela-cursos')" class="btn-voltar">Voltar aos Cursos</button>
+        </div>
+
+        <div id="tela-admin" class="hidden">
+            <h2 style="color: #e74c3c;">Painel Root / Administrador</h2>
+            <p><strong>Banco de Dados de Usuários:</strong></p>
+            <pre id="visualizador-db"></pre>
+            <button class="btn-sair" onclick="sair()">Logout Admin</button>
         </div>
     </div>
 
