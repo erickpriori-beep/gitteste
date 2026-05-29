@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" data-theme="escuro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,30 +8,61 @@
 </head>
 <body>
 
+    <!-- SELETOR DE TEMA (flutuante) -->
+    <div class="tema-picker" id="tema-picker">
+        <span class="tema-picker-icone">🎨</span>
+        <div class="tema-separador"></div>
+        <button class="tema-btn tema-escuro ativo" id="btn-escuro" onclick="setTema('escuro')" title="Escuro — Vermelho">
+            <div class="tema-dot"></div>
+            <span>Escuro</span>
+        </button>
+        <button class="tema-btn tema-claro" id="btn-claro" onclick="setTema('claro')" title="Claro — Azul">
+            <div class="tema-dot"></div>
+            <span>Claro</span>
+        </button>
+        <button class="tema-btn tema-cinza" id="btn-cinza" onclick="setTema('cinza')" title="Cinza">
+            <div class="tema-dot"></div>
+            <span>Cinza</span>
+        </button>
+    </div>
+
     <div class="container">
 
         <!-- SEÇÃO 1: LOGIN E REGISTRO -->
         <div id="secao-auth">
-            <div class="logo-badge">
-                <div class="logo-icon">🎓</div>
-                <span class="logo-text">EducaIA</span>
+            <div class="auth-hero">
+                <div class="logo-badge">
+                    <div class="logo-icon">🎓</div>
+                    <span class="logo-text">EducaIA</span>
+                </div>
+                <div class="auth-slogan">Aprenda mais. Evolua sempre.</div>
             </div>
+
             <h1 id="titulo-auth">Bem-vindo de volta</h1>
-            <p id="subtitulo-auth">Faça login para continuar estudando</p>
+            <p id="subtitulo-auth">Faça login para continuar sua jornada</p>
 
             <div class="divider"></div>
 
             <div class="campo">
                 <label>Usuário</label>
-                <input type="text" id="usuario" placeholder="Ex: ze_gamer">
+                <input type="text" id="usuario" placeholder="Ex: ze_gamer" autocomplete="username">
             </div>
             <div class="campo">
                 <label>Senha</label>
-                <input type="password" id="senha" placeholder="••••••••">
+                <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password"
+                       onkeydown="if(event.key==='Enter') autenticar()">
             </div>
-            <button onclick="autenticar()" id="btn-auth">Entrar</button>
+            <button onclick="autenticar()" id="btn-auth">Entrar na conta</button>
             <div class="opcoes-nav">
-                <span id="msg-troca">Não tem conta? <a onclick="alternarTela(false)">Registre-se</a></span>
+                <span id="msg-troca">Não tem conta? <a onclick="alternarTela(false)">Registre-se grátis</a></span>
+            </div>
+
+            <div class="auth-features">
+                <div class="auth-feature-item">📐 Matemática</div>
+                <div class="auth-feature-item">⚡ Física</div>
+                <div class="auth-feature-item">🧪 Química</div>
+                <div class="auth-feature-item">📜 História</div>
+                <div class="auth-feature-item">🌿 Biologia</div>
             </div>
         </div>
 

@@ -7,6 +7,23 @@ let materiaAtual = '';
 let nivelAtual = '';
 let jaAcertou = false;
 
+// ── SISTEMA DE TEMAS ─────────────────────────────────────────────────
+function setTema(tema) {
+  document.documentElement.setAttribute('data-theme', tema);
+  localStorage.setItem('educa-tema', tema);
+
+  document.querySelectorAll('.tema-btn').forEach(btn => btn.classList.remove('ativo'));
+  const btnAtivo = document.getElementById('btn-' + tema);
+  if (btnAtivo) btnAtivo.classList.add('ativo');
+}
+
+function carregarTema() {
+  const temaSalvo = localStorage.getItem('educa-tema') || 'escuro';
+  setTema(temaSalvo);
+}
+
+carregarTema();
+
 // ── BANCO DE QUESTÕES ────────────────────────────────────────────────
 const banco = {
   matematica: {
