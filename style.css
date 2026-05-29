@@ -249,6 +249,47 @@ button:active { transform: translateY(0); }
 
 .controles-navegacao button { margin-top: 0; }
 
+/* ── AULA HEADER ── */
+.aula-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+
+.aula-header #titulo-aula {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  margin: 0;
+}
+
+.badge-contador {
+  background: rgba(255, 69, 96, 0.12);
+  border: 1px solid rgba(255, 69, 96, 0.3);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── NEXT QUESTION BUTTON ── */
+.btn-proxima {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35);
+  margin-bottom: 6px;
+  animation: fadeUp 0.25s ease both;
+}
+
+.btn-proxima:hover {
+  box-shadow: 0 6px 24px rgba(124, 58, 237, 0.5);
+}
+
 /* ── COURSE CONTENT BOX ── */
 #conteudo-aula {
   background: var(--input-bg);

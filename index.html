@@ -50,6 +50,8 @@
                     <option value="matematica">📐 Matemática</option>
                     <option value="fisica">⚡ Física</option>
                     <option value="quimica">🧪 Química</option>
+                    <option value="historia">📜 História</option>
+                    <option value="biologia">🌿 Biologia</option>
                 </select>
             </div>
 
@@ -65,9 +67,19 @@
             <button onclick="carregarAula()">Iniciar Lição →</button>
         </div>
 
-        <!-- SEÇÃO 3: CONTEÚDO / IA -->
+        <!-- SEÇÃO 3: QUESTÃO -->
         <div id="secao-aula" class="hidden">
-            <h2 id="titulo-aula"></h2>
+            <div class="aula-header">
+                <span id="titulo-aula"></span>
+                <span id="contador-questao" class="badge-contador"></span>
+            </div>
+
+            <div class="progresso-wrap">
+                <div class="progresso-bar-bg">
+                    <div class="progresso-bar" id="barra-progresso" style="width:0%"></div>
+                </div>
+                <span class="progresso-label" id="label-progresso">0 acertos</span>
+            </div>
 
             <div id="conteudo-aula"></div>
 
@@ -79,12 +91,14 @@
                         id="input-resposta"
                         placeholder="Digite sua resposta aqui..."
                         oninput="verificarRespostaEmTempoReal()"
+                        onkeydown="if(event.key==='Enter') verificarResposta()"
                     >
-                    <button class="btn-verificar btn-confirmar" onclick="verificarResposta()">Verificar</button>
+                    <button class="btn-verificar btn-confirmar" id="btn-verificar" onclick="verificarResposta()">Verificar</button>
                 </div>
                 <div id="feedback"></div>
             </div>
 
+            <button id="btn-proxima" class="btn-proxima hidden" onclick="proximaQuestao()">Próxima Questão →</button>
             <button onclick="voltar()" class="btn-voltar">← Voltar ao Menu</button>
         </div>
 
