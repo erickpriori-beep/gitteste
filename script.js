@@ -1,262 +1,289 @@
-// 1. Configuração Inicial do Banco de Dados Local atualizado para Educa+
-if (!localStorage.getItem('db_educamais')) {
-    localStorage.setItem('db_educamais', JSON.stringify({ "ADMIN": "123" }));
-}
+let modoLogin = true;
+let questaoAtual = null;
 
-// 2. Metas de Repetição
-const METAS = { 
-    iniciante: 15, 
-    intermediario: 25, 
-    avancado: 60 
+// ── DADOS DAS QUESTÕES ──────────────────────────────────────────────
+const questoes = {
+  matematica: {
+    iniciante: {
+      conteudo: `<b>📐 Equação do 1º Grau</b><br><br>
+        Uma equação do 1º grau tem a forma <b>ax + b = c</b>.<br><br>
+        <b>Desafio:</b> Resolva <b>2x + 10 = 20</b>.<br>
+        Isole o <em>x</em>: subtraia 10 dos dois lados e depois divida por 2.<br><br>
+        <i>Qual é o valor de x?</i>`,
+      tipo: "numero",
+      resposta: 5,
+      tolerancia: 1
+    },
+    intermediario: {
+      conteudo: `<b>📐 Equação do 2º Grau</b><br><br>
+        Use a fórmula de Bhaskara: <b>x = (−b ± √Δ) / 2a</b>, onde Δ = b² − 4ac.<br><br>
+        <b>Desafio:</b> Resolva <b>x² − 5x + 6 = 0</b>.<br><br>
+        <i>Qual é a SOMA das duas raízes?</i>`,
+      tipo: "numero",
+      resposta: 5,
+      tolerancia: 0.5
+    },
+    avancado: {
+      conteudo: `<b>📐 Progressão Aritmética</b><br><br>
+        A fórmula do termo geral é <b>aₙ = a₁ + (n−1)·r</b>.<br><br>
+        <b>Desafio:</b> Em uma PA com a₁ = 3 e razão r = 4, qual o valor do <b>10º termo</b>?<br><br>
+        <i>Digite o valor de a₁₀.</i>`,
+      tipo: "numero",
+      resposta: 39,
+      tolerancia: 2
+    }
+  },
+  fisica: {
+    iniciante: {
+      conteudo: `<b>⚡ Segunda Lei de Newton</b><br><br>
+        A força resultante sobre um objeto é: <b>F = m · a</b><br><br>
+        <b>Desafio:</b> Um objeto de massa <b>10 kg</b> sofre uma aceleração de <b>3 m/s²</b>.<br>
+        Qual a força resultante em <b>Newtons (N)</b>?<br><br>
+        <i>Digite apenas o número.</i>`,
+      tipo: "numero",
+      resposta: 30,
+      tolerancia: 3
+    },
+    intermediario: {
+      conteudo: `<b>⚡ Cinemática — MRUV</b><br><br>
+        Equação do espaço: <b>s = s₀ + v₀t + ½at²</b><br><br>
+        <b>Desafio:</b> Um carro parte do repouso (v₀ = 0) com aceleração de <b>4 m/s²</b>.<br>
+        Qual o espaço percorrido em <b>5 segundos</b>?<br><br>
+        <i>Resposta em metros (m).</i>`,
+      tipo: "numero",
+      resposta: 50,
+      tolerancia: 5
+    },
+    avancado: {
+      conteudo: `<b>⚡ Energia Cinética</b><br><br>
+        A energia cinética é dada por: <b>Ec = ½ · m · v²</b><br><br>
+        <b>Desafio:</b> Um objeto de <b>4 kg</b> se move a <b>10 m/s</b>.<br>
+        Qual sua energia cinética em <b>Joules (J)</b>?<br><br>
+        <i>Digite apenas o número.</i>`,
+      tipo: "numero",
+      resposta: 200,
+      tolerancia: 10
+    }
+  },
+  quimica: {
+    iniciante: {
+      conteudo: `<b>🧪 Ligações Iônicas</b><br><br>
+        Uma ligação iônica ocorre quando um átomo <b>doa elétrons</b> para outro,
+        formando íons de cargas opostas que se atraem.<br><br>
+        Exemplo clássico: <b>NaCl</b> (sal de cozinha) — o sódio doa 1 elétron ao cloro.<br><br>
+        <b>Pergunta:</b> Que tipo de partícula é <b>transferida</b> numa ligação iônica?<br><br>
+        <i>Digite: elétron, próton ou nêutron.</i>`,
+      tipo: "palavra",
+      resposta: "elétron",
+      sinonimos: ["eletron", "elétrons", "eletrons", "electron", "electrons"]
+    },
+    intermediario: {
+      conteudo: `<b>🧪 Reações de Oxirredução</b><br><br>
+        Numa reação redox, uma espécie <b>perde elétrons</b> (oxidação) e outra <b>ganha elétrons</b> (redução).<br><br>
+        <b>Pergunta:</b> Na reação: <b>Zn + CuSO₄ → ZnSO₄ + Cu</b><br>
+        Qual elemento é <b>oxidado</b>?<br><br>
+        <i>Digite o símbolo do elemento.</i>`,
+      tipo: "palavra",
+      resposta: "zn",
+      sinonimos: ["zinco", "zn"]
+    },
+    avancado: {
+      conteudo: `<b>🧪 Estequiometria</b><br><br>
+        Na reação: <b>2H₂ + O₂ → 2H₂O</b><br><br>
+        Usando pesos atômicos H = 1 e O = 16,
+        <b>quantos gramas de H₂O</b> são formados a partir de <b>4g de H₂</b>?<br><br>
+        <i>Digite o valor em gramas.</i>`,
+      tipo: "numero",
+      resposta: 36,
+      tolerancia: 2
+    }
+  }
 };
 
-// 3. Banco de Dados de Teoria
-const cursoData = {
-    matematica: {
-        iniciante: { slides: ["<b>Teoria:</b> Soma e Subtração básica.", "<b>Exemplo:</b> Se você tem 2 e ganha X para ter 5, X=3.", "<b>Desafio:</b> Acerte 15 questões vindas da API."] },
-        intermediario: { slides: ["<b>Teoria:</b> Equações de 1º Grau.", "<b>Exemplo:</b> 2x = 20 -> x = 10.", "<b>Desafio:</b> Acerte 25 questões vindas da API."] },
-        avancado: { slides: ["<b>Teoria:</b> Potenciação e Radiciação.", "<b>Exemplo:</b> √64 = 8.", "<b>Desafio:</b> Acerte 60 questões dinâmicas de IA."] }
-    },
-    fisica: {
-        iniciante: { slides: ["<b>Teoria:</b> Velocidade Média.", "<b>Fórmula:</b> V = ΔS / Δt.", "<b>Desafio:</b> 15 questões vindas da API."] },
-        intermediario: { slides: ["<b>Teoria:</b> Movimento Uniforme.", "<b>Exemplo:</b> Distância percorrida com velocidade constante.", "<b>Desafio:</b> 25 questões vindas da API."] },
-        avancado: { slides: ["<b>Teoria:</b> Leis de Newton.", "<b>Fórmula:</b> F = m * a.", "<b>Desafio:</b> 60 questões vindas da API."] }
-    },
-    quimica: {
-        iniciante: { slides: ["<b>Teoria:</b> O Átomo.", "<b>Dica:</b> Prótons (+) e Elétrons (-).", "<b>Desafio:</b> 15 questões vindas da API."] },
-        intermediario: { slides: ["<b>Teoria:</b> Distribuição Eletrônica.", "<b>Dica:</b> Camadas K, L, M...", "<b>Desafio:</b> 25 questões vindas da API."] },
-        avancado: { slides: ["<b>Teoria:</b> Estequiometria.", "<b>Exemplo:</b> Cálculo de massa molar.", "<b>Desafio:</b> 60 questões vindas da API."] }
-    }
-};
-
-let questaoAtual = { p: "", r: "" };
-let acertosContador = 0;
-let metaAtual = 0;
-let slidesAtuais = [];
-let slideIndex = 0;
-
-function mostrarTela(id) {
-    const telas = ['tela-login', 'tela-registro', 'tela-cursos', 'tela-aula', 'tela-admin'];
-    telas.forEach(t => document.getElementById(t).classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
+// ── ALTERNAR TELA LOGIN / REGISTRO ──────────────────────────────────
+function alternarTela(login) {
+  modoLogin = login;
+  document.getElementById('titulo-auth').innerText = login ? "Bem-vindo de volta" : "Criar sua conta";
+  document.getElementById('subtitulo-auth').innerText = login
+    ? "Faça login para continuar estudando"
+    : "Preencha os dados para se registrar";
+  document.getElementById('btn-auth').innerText = login ? "Entrar" : "Cadastrar";
+  document.getElementById('msg-troca').innerHTML = login
+    ? 'Não tem conta? <a onclick="alternarTela(false)">Registre-se</a>'
+    : 'Já tem conta? <a onclick="alternarTela(true)">Fazer Login</a>';
 }
 
-// SISTEMA DE API EXPANDIDO (Com uma grande variedade de perguntas)
-async function buscarQuestaoDaAPI(materia, nivel) {
-    try {
-        // Pequena pausa imperceptível de simulação assíncrona (200ms)
-        await new Promise(resolve => setTimeout(resolve, 200));
+// ── AUTENTICAÇÃO ─────────────────────────────────────────────────────
+function autenticar() {
+  const user = document.getElementById('usuario').value.trim();
+  const pass = document.getElementById('senha').value;
 
-        const bancoDeDadosAPI = {
-            matematica: {
-                iniciante: [
-                    { p: "Qual é o valor de 15 + 27?", r: "42" },
-                    { p: "Quanto é 12 - 5?", r: "7" },
-                    { p: "Se x + 7 = 20, qual o valor de x?", r: "13" },
-                    { p: "Quanto é 45 + 15?", r: "60" },
-                    { p: "Qual o resultado de 30 - 18?", r: "12" },
-                    { p: "Se 10 - x = 4, quanto vale x?", r: "6" },
-                    { p: "Quanto é 7 + 14?", r: "21" },
-                    { p: "Calcule: 50 - 25", r: "25" }
-                ],
-                intermediario: [
-                    { p: "Quanto é 9 multiplicado por 8?", r: "72" },
-                    { p: "Resolva a equação: 3x - 9 = 12", r: "7" },
-                    { p: "Qual é a área de um quadrado com lado de 6cm?", r: "36" },
-                    { p: "Se 2x + 4 = 16, quanto vale x?", r: "6" },
-                    { p: "Quanto é 7 vezes 6?", r: "42" },
-                    { p: "Qual o valor de 81 dividido por 9?", r: "9" },
-                    { p: "Se um triângulo tem base 4 e altura 5, qual a área?", r: "10" },
-                    { p: "Resolva: 5x = 25", r: "5" }
-                ],
-                avancado: [
-                    { p: "Qual é a raiz quadrada de 144?", r: "12" },
-                    { p: "Qual o valor do logaritmo de 100 na base 10?", r: "2" },
-                    { p: "Calcule a hipotenusa de um triângulo de catetos 3 e 4.", r: "5" },
-                    { p: "Qual é o valor de 2 elevado a 5?", r: "32" },
-                    { p: "Qual a raiz quadrada de 169?", r: "13" },
-                    { p: "Se log de x na base 2 é 3, quanto vale x?", r: "8" },
-                    { p: "Qual o valor de 11 elevado ao quadrado?", r: "121" },
-                    { p: "Calcule a área de um círculo de raio 2 (use pi=3).", r: "12" }
-                ]
-            },
-            fisica: {
-                iniciante: [
-                    { p: "Se um objeto anda 100m em 10s, qual sua velocidade em m/s?", r: "10" },
-                    { p: "Qual a unidade de medida da força no SI?", r: "Newton" },
-                    { p: "Verdadeiro ou Falso: O som pode se propagar no vácuo.", r: "Falso" },
-                    { p: "Qual o símbolo da unidade de medida do tempo no SI?", r: "s" },
-                    { p: "Se corro 20 metros em 2 segundos, qual minha velocidade?", r: "10" },
-                    { p: "Qual a unidade de medida de distância no SI?", r: "metro" }
-                ],
-                intermediario: [
-                    { p: "Força necessária para mover massa de 2kg a uma aceleração de 5m/s²? (em Newtons)", r: "10" },
-                    { p: "Qual a velocidade de um objeto após cair por 2 segundos livremente? (g=10m/s²)", r: "20" },
-                    { p: "Se a massa é 5kg e a aceleração é 3m/s², qual a força resultante?", r: "15" },
-                    { p: "Qual o trabalho realizado por uma força de 10N que desloca um corpo por 5m?", r: "50" },
-                    { p: "Qual a energia cinética de um corpo de 2kg a 4m/s?", r: "16" }
-                ],
-                avancado: [
-                    { p: "Qual o nome da tendência de um corpo de resistir a mudanças no seu estado de movimento?", r: "Inércia" },
-                    { p: "Qual o peso em Newtons de um objeto de 50kg na Terra (g=10m/s²)?", r: "500" },
-                    { p: "Qual a aceleração de gravidade padrão adotada na Terra nos testes simplificados?", r: "10" },
-                    { p: "Qual a terceira lei de Newton? Lei da Ação e ...", r: "Reação" },
-                    { p: "Qual a velocidade da luz no vácuo aproximada? (em milhoes de m/s)", r: "300" }
-                ]
-            },
-            quimica: {
-                iniciante: [
-                    { p: "Qual é o símbolo químico do Oxigênio?", r: "O" },
-                    { p: "Qual é a fórmula molecular da água?", r: "H2O" },
-                    { p: "Qual o elemento químico mais abundante no universo?", r: "Hidrogênio" },
-                    { p: "Qual o símbolo químico do Carbono?", r: "C" },
-                    { p: "Qual o símbolo do Nitrogênio?", r: "N" },
-                    { p: "Qual a fórmula do gás oxigênio que respiramos?", r: "O2" }
-                ],
-                intermediario: [
-                    { p: "Qual é o número atômico do elemento Hidrogênio (H)?", r: "1" },
-                    { p: "Qual o nome das partículas subatômicas com carga positiva?", r: "Prótons" },
-                    { p: "Qual partícula possui carga negativa no átomo?", r: "Elétrons" },
-                    { p: "Onde ficam localizados os prótons e nêutrons?", r: "Núcleo" },
-                    { p: "Qual o símbolo do elemento Sódio?", r: "Na" }
-                ],
-                avancado: [
-                    { p: "Qual o nome da organização que padroniza a nomenclatura química mundial?", r: "IUPAC" },
-                    { p: "Qual o principal composto químico presente no sal de cozinha comum?", r: "NaCl" },
-                    { p: "Qual a massa molar do Hidrogênio molecular (H2) em g/mol?", r: "2" },
-                    { p: "Qual o nome das colunas verticais da tabela periódica?", r: "Famílias" },
-                    { p: "Qual a fórmula química do Dióxido de Carbono?", r: "CO2" }
-                ]
-            }
-        };
+  if (!user || !pass) {
+    alert("Por favor, preencha todos os campos.");
+    return;
+  }
 
-        const listaQuestoes = bancoDeDadosAPI[materia][nivel];
-        const questaoSorteada = listaQuestoes[Math.floor(Math.random() * listaQuestoes.length)];
-        return questaoSorteada;
-
-    } catch (erro) {
-        console.error("Falha na API: ", erro);
-        return { p: "Erro ao conectar. Quanto é 5 + 5?", r: "10" };
+  if (!modoLogin) {
+    localStorage.setItem('user_' + user, pass);
+    alert("Conta criada com sucesso! 🎉");
+    alternarTela(true);
+  } else {
+    const senhaSalva = localStorage.getItem('user_' + user);
+    if (senhaSalva === pass) {
+      document.getElementById('secao-auth').classList.add('hidden');
+      document.getElementById('secao-curso').classList.remove('hidden');
+      document.getElementById('boas-vindas').innerText = `👋 Olá, ${user}!`;
+    } else {
+      alert("Usuário ou senha inválidos.");
     }
+  }
 }
 
+// ── CARREGAR AULA ────────────────────────────────────────────────────
 function carregarAula() {
-    const mat = document.getElementById('materia').value;
-    const niv = document.getElementById('nivel').value;
-    const aula = cursoData[mat][niv];
+  const materia = document.getElementById('materia').value;
+  const nivel   = document.getElementById('nivel').value;
 
-    document.getElementById('titulo-aula').innerText = `${mat.toUpperCase()} - ${niv.toUpperCase()}`;
-    slidesAtuais = aula.slides;
-    slideIndex = 0;
-    acertosContador = 0;
-    metaAtual = METAS[niv];
+  questaoAtual = questoes[materia][nivel];
 
-    document.getElementById('meta-n').innerText = metaAtual;
-    document.getElementById('progresso-n').innerText = "0";
-    document.getElementById('sessao-certificado').classList.add('hidden');
+  const nomeMateria = {
+    matematica: "📐 Matemática",
+    fisica:     "⚡ Física",
+    quimica:    "🧪 Química"
+  }[materia];
 
-    atualizarSlide();
-    mostrarTela('tela-aula');
+  const nomeNivel = {
+    iniciante:     "Iniciante",
+    intermediario: "Intermediário",
+    avancado:      "Avançado"
+  }[nivel];
+
+  document.getElementById('secao-curso').classList.add('hidden');
+  document.getElementById('secao-aula').classList.remove('hidden');
+  document.getElementById('titulo-aula').innerText = `${nomeMateria} — ${nomeNivel}`;
+  document.getElementById('conteudo-aula').innerHTML = questaoAtual.conteudo;
+  document.getElementById('input-resposta').value = '';
+  limparFeedback();
 }
 
-function atualizarSlide() {
-    const conteudo = document.getElementById('conteudo-aula');
-    const areaTeste = document.getElementById('area-teste');
-    const btnAvancar = document.getElementById('btn-avancar-slide');
-
-    conteudo.innerHTML = slidesAtuais[slideIndex];
-    document.getElementById('btn-voltar-slide').disabled = (slideIndex === 0);
-
-    if (slideIndex === slidesAtuais.length - 1) {
-        areaTeste.classList.remove('hidden');
-        btnAvancar.classList.add('hidden');
-        novaPergunta();
-    } else {
-        areaTeste.classList.add('hidden');
-        btnAvancar.classList.remove('hidden');
-    }
-}
-
-function mudarSlide(direcao) {
-    slideIndex += direcao;
-    atualizarSlide();
-}
-
-// Sem mensagens de texto intermediárias, carregamento limpo e ágil
-async function novaPergunta() {
-    const mat = document.getElementById('materia').value;
-    const niv = document.getElementById('nivel').value;
-
-    document.getElementById('resposta-aluno').value = "";
-    document.getElementById('feedback').innerText = "";
-
-    // Requisição assíncrona aguardando a resposta direta do banco de dados
-    questaoAtual = await buscarQuestaoDaAPI(mat, niv);
-
-    document.getElementById('pergunta-texto').innerText = questaoAtual.p;
-}
-
+// ── VERIFICAR RESPOSTA (clique no botão) ─────────────────────────────
 function verificarResposta() {
-    const resp = document.getElementById('resposta-aluno').value.trim();
-    const f = document.getElementById('feedback');
+  if (!questaoAtual) return;
 
-    if (resp.toLowerCase() === questaoAtual.r.toLowerCase()) {
-        acertosContador++;
-        document.getElementById('progresso-n').innerText = acertosContador;
+  const input = document.getElementById('input-resposta').value.trim();
+  if (!input) {
+    mostrarFeedback('errado', '✏️ Digite uma resposta antes de verificar.');
+    return;
+  }
 
-        if (acertosContador >= metaAtual) {
-            f.innerText = "⭐ Meta concluída com sucesso!";
-            f.style.color = "#2ecc71";
-            document.getElementById('sessao-certificado').classList.remove('hidden');
-        } else {
-            f.innerText = "✅ Correto!";
-            f.style.color = "#2ecc71";
-            setTimeout(novaPergunta, 400);
-        }
+  const resultado = avaliarResposta(input, questaoAtual);
+  mostrarFeedback(resultado.tipo, resultado.mensagem);
+}
+
+// ── VERIFICAR EM TEMPO REAL (ao digitar) ─────────────────────────────
+function verificarRespostaEmTempoReal() {
+  if (!questaoAtual) return;
+
+  const input = document.getElementById('input-resposta').value.trim();
+  if (!input) { limparFeedback(); return; }
+
+  const resultado = avaliarResposta(input, questaoAtual);
+
+  if (resultado.tipo === 'correto') {
+    mostrarFeedback('correto', resultado.mensagem);
+  } else if (resultado.tipo === 'proximo') {
+    mostrarFeedback('proximo', resultado.mensagem);
+  } else {
+    limparFeedback();
+  }
+}
+
+// ── LÓGICA DE AVALIAÇÃO ──────────────────────────────────────────────
+function avaliarResposta(input, questao) {
+  if (questao.tipo === 'numero') {
+    const valorDigitado = parseFloat(input.replace(',', '.'));
+    if (isNaN(valorDigitado)) {
+      return { tipo: 'errado', mensagem: '❌ Digite um número válido.' };
+    }
+
+    const diff = Math.abs(valorDigitado - questao.resposta);
+    const tolerancia = questao.tolerancia;
+
+    if (diff === 0) {
+      return { tipo: 'correto', mensagem: '✅ Resposta correta! Excelente trabalho!' };
+    } else if (diff <= tolerancia) {
+      const percentual = Math.round((1 - diff / (tolerancia * 2)) * 100);
+      return { tipo: 'proximo', mensagem: `🔥 Muito perto! Você está a ${diff} de distância da resposta certa (${questao.resposta}).` };
+    } else if (diff <= tolerancia * 4) {
+      return { tipo: 'proximo', mensagem: `💡 Chegando lá! Sua resposta está próxima — revise os cálculos.` };
     } else {
-        f.innerText = "❌ Tente novamente.";
-        f.style.color = "#e74c3c";
-    }
-}
-
-function fazerLogin() {
-    const u = document.getElementById('login-user').value.toUpperCase().trim();
-    const p = document.getElementById('login-pass').value;
-    const db = JSON.parse(localStorage.getItem('db_educamais'));
-
-    if(u === "ADMIN" && db["ADMIN"] === p) {
-        document.getElementById('visualizador-db').innerText = JSON.stringify(db, null, 4);
-        mostrarTela('tela-admin');
-        return;
+      return { tipo: 'errado', mensagem: `❌ Resposta incorreta. Tente novamente com calma!` };
     }
 
-    if(db[u] && db[u] === p) {
-        document.getElementById('boas-vindas').innerText = `Bem-vindo, ${u}!`;
-        mostrarTela('tela-cursos');
-    } else {
-        alert("Usuário ou senha incorretos.");
+  } else if (questao.tipo === 'palavra') {
+    const normalizado = input.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const respostaNorm = questao.resposta.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const sinonimosNorm = (questao.sinonimos || []).map(s =>
+      s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    );
+
+    if (normalizado === respostaNorm || sinonimosNorm.includes(normalizado)) {
+      return { tipo: 'correto', mensagem: '✅ Resposta correta! Muito bem!' };
     }
+
+    const levenshtein = calcularLevenshtein(normalizado, respostaNorm);
+    if (levenshtein <= 2) {
+      return { tipo: 'proximo', mensagem: `🔥 Quase lá! Verifique a ortografia da sua resposta.` };
+    }
+
+    const contemParte = respostaNorm.split('').filter(c => normalizado.includes(c)).length;
+    if (contemParte >= respostaNorm.length * 0.6) {
+      return { tipo: 'proximo', mensagem: `💡 Você está no caminho certo — revise a resposta.` };
+    }
+
+    return { tipo: 'errado', mensagem: `❌ Resposta incorreta. Leia o conteúdo novamente!` };
+  }
+
+  return { tipo: 'errado', mensagem: '❌ Resposta não reconhecida.' };
 }
 
-function fazerRegistro() {
-    const u = document.getElementById('reg-user').value.toUpperCase().trim();
-    const p = document.getElementById('reg-pass').value;
-    if(!u || !p) return alert("Preencha todos os campos.");
-
-    let db = JSON.parse(localStorage.getItem('db_educamais'));
-    if(db[u]) return alert("Usuário já cadastrado.");
-
-    db[u] = p;
-    localStorage.setItem('db_educamais', JSON.stringify(db));
-    alert("Registro concluído!");
-    mostrarTela('tela-login');
+// ── DISTÂNCIA DE LEVENSHTEIN (para comparar palavras) ────────────────
+function calcularLevenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i-1] === b[j-1]
+        ? dp[i-1][j-1]
+        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
 }
 
-function gerarCertificado() {
-    const user = document.getElementById('boas-vindas').innerText.replace("Bem-vindo, ", "").replace("!", "");
-    alert(`📜 CERTIFICADO EDUCA+\n\nAluno: ${user}\nStatus: Concluído com mérito via API Integrada.\nData: ${new Date().toLocaleDateString()}`);
+// ── HELPERS DE FEEDBACK ──────────────────────────────────────────────
+function mostrarFeedback(tipo, mensagem) {
+  const el = document.getElementById('feedback');
+  el.className = '';
+  el.textContent = mensagem;
+  void el.offsetWidth;
+  el.classList.add(tipo, 'visivel');
 }
 
-function sair() {
-    location.reload();
+function limparFeedback() {
+  const el = document.getElementById('feedback');
+  el.className = '';
+  el.textContent = '';
+}
+
+// ── VOLTAR ───────────────────────────────────────────────────────────
+function voltar() {
+  document.getElementById('secao-aula').classList.add('hidden');
+  document.getElementById('secao-curso').classList.remove('hidden');
+  questaoAtual = null;
+  limparFeedback();
 }
