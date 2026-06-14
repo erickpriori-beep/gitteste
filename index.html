@@ -8,7 +8,6 @@
 </head>
 <body>
 
-    <!-- SELETOR DE TEMA (flutuante) -->
     <div class="tema-picker" id="tema-picker">
         <span class="tema-picker-icone">🎨</span>
         <div class="tema-separador"></div>
@@ -28,7 +27,6 @@
 
     <div class="container">
 
-        <!-- SEÇÃO 1: LOGIN E REGISTRO -->
         <div id="secao-auth">
             <div class="auth-hero">
                 <div class="logo-badge">
@@ -38,8 +36,13 @@
                 <div class="auth-slogan">Aprenda mais. Evolua sempre.</div>
             </div>
 
+            <div class="perfil-seletor">
+                <button type="button" class="btn-perfil ativo" id="perfil-aluno" onclick="selecionarPerfil('aluno')">Sou Aluno</button>
+                <button type="button" class="btn-perfil" id="perfil-professor" onclick="selecionarPerfil('professor')">Sou Professor</button>
+            </div>
+
             <h1 id="titulo-auth">Bem-vindo de volta</h1>
-            <p id="subtitulo-auth">Faça login para continuar sua jornada</p>
+            <p id="subtitulo-auth">Faça login como Aluno para continuar</p>
 
             <div class="divider"></div>
 
@@ -53,6 +56,7 @@
                        onkeydown="if(event.key==='Enter') autenticar()">
             </div>
             <button onclick="autenticar()" id="btn-auth">Entrar na conta</button>
+            
             <div class="opcoes-nav">
                 <span id="msg-troca">Não tem conta? <a onclick="alternarTela(false)">Registre-se grátis</a></span>
             </div>
@@ -66,15 +70,25 @@
             </div>
         </div>
 
-        <!-- SEÇÃO 2: SELEÇÃO DE CURSO -->
+        <div id="secao-menu-aluno" class="hidden">
+            <div class="logo-badge">
+                <div class="logo-icon">🧑‍🎓</div>
+                <span class="logo-text">EducaIA Aluno</span>
+            </div>
+            <span id="boas-vindas-aluno" class="badge-boasvindas"></span>
+            
+            <div class="menu-grid">
+                <button class="btn-menu-opcao" onclick="irParaTreino()">🏋️ Treino Livre</button>
+                <button class="btn-menu-opcao" onclick="irParaAtividadesAluno()">📝 Ver Atividades</button>
+            </div>
+            <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
+        </div>
+
         <div id="secao-curso" class="hidden">
             <div class="logo-badge">
                 <div class="logo-icon">📚</div>
-                <span class="logo-text">EducaIA</span>
+                <span class="logo-text">Modo Treino</span>
             </div>
-            <h2>Área de Estudos</h2>
-            <span id="boas-vindas"></span>
-
             <div class="campo">
                 <label>Matéria</label>
                 <select id="materia">
@@ -85,7 +99,6 @@
                     <option value="biologia">🌿 Biologia</option>
                 </select>
             </div>
-
             <div class="campo">
                 <label>Nível de Dificuldade</label>
                 <select id="nivel">
@@ -94,11 +107,70 @@
                     <option value="avancado">🔴 Avançado</option>
                 </select>
             </div>
-
             <button onclick="carregarAula()">Iniciar Lição →</button>
+            <button onclick="voltarParaMenuAluno()" class="btn-voltar" style="margin-top: 10px;">← Voltar ao Menu</button>
         </div>
 
-        <!-- SEÇÃO 3: QUESTÃO -->
+        <div id="secao-atividades-aluno" class="hidden">
+            <h2>Minhas Atividades</h2>
+            
+            <div class="abas-container">
+                <button class="aba-btn ativa" onclick="mudarAbaAluno('recentes')">Recém-atribuídas</button>
+                <button class="aba-btn" onclick="mudarAbaAluno('pendentes')">Pendentes</button>
+                <button class="aba-btn" onclick="mudarAbaAluno('concluidas')">Concluídas</button>
+            </div>
+
+            <div id="lista-atividades-container" class="lista-atividades">
+                </div>
+
+            <button onclick="voltarParaMenuAluno()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+        </div>
+
+        <div id="secao-menu-professor" class="hidden">
+            <div class="logo-badge">
+                <div class="logo-icon">👨‍🏫</div>
+                <span class="logo-text">EducaIA Pro</span>
+            </div>
+            <span id="boas-vindas-professor" class="badge-boasvindas"></span>
+            
+            <div class="menu-grid">
+                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">👥 Gerenciar Alunos</button>
+                <button class="btn-menu-opcao" onclick="irParaAtribuirAtividade()">➕ Atribuir Atividade</button>
+            </div>
+            <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
+        </div>
+
+        <div id="secao-gerenciar-alunos" class="hidden">
+            <h2>Alunos Cadastrados</h2>
+            <p>Visualização em tempo real do banco de dados</p>
+            <div class="divider"></div>
+            
+            <div id="banco-alunos-lista" class="banco-dados-box">
+                </div>
+            
+            <button onclick="voltarParaMenuProfessor()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+        </div>
+
+        <div id="secao-atribuir-atividade" class="hidden">
+            <h2>Criar Nova Atividade</h2>
+            <p>Limite máximo de 8 questões por atividade</p>
+            
+            <div class="campo" style="margin-top: 15px;">
+                <label>Título da Atividade</label>
+                <input type="text" id="titulo-nova-atividade" placeholder="Ex: Simulado de Álgebra">
+            </div>
+
+            <div id="container-questoes-criadas"></div>
+
+            <div class="controles-navegacao" style="margin-top: 15px;">
+                <button type="button" onclick="adicionarNovaQuestaoForm()" id="btn-add-questao" style="background: var(--input-bg); color: var(--text); border: 1px solid var(--border)">+ Nova Questão</button>
+                <button type="button" onclick="salvarAtividadeProfessor()" class="btn-confirmar">Salvar e Publicar</button>
+            </div>
+
+            <button onclick="voltarParaMenuProfessor()" class="btn-voltar" style="margin-top: 10px;">← Cancelar</button>
+        </div>
+
+
         <div id="secao-aula" class="hidden">
             <div class="aula-header">
                 <span id="titulo-aula"></span>
@@ -130,7 +202,7 @@
             </div>
 
             <button id="btn-proxima" class="btn-proxima hidden" onclick="proximaQuestao()">Próxima Questão →</button>
-            <button onclick="voltar()" class="btn-voltar">← Voltar ao Menu</button>
+            <button onclick="voltarParaMenuAluno()" class="btn-voltar">← Voltar ao Menu</button>
         </div>
 
     </div>

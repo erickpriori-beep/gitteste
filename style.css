@@ -157,7 +157,7 @@ a {
 a:hover { opacity: 0.75; text-decoration: underline; }
 
 /* ══════════════════════════════════════════════
-   AUTH HERO — tela de login ampliada
+   AUTH HERO
 ══════════════════════════════════════════════ */
 .auth-hero {
   display: flex;
@@ -239,6 +239,8 @@ a:hover { opacity: 0.75; text-decoration: underline; }
   margin: 24px 0;
 }
 
+hr { border: none; height: 1px; background: var(--border); margin: 18px 0; }
+
 /* ══════════════════════════════════════════════
    FORM
 ══════════════════════════════════════════════ */
@@ -275,10 +277,7 @@ input:focus, select:focus {
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-select option {
-  background: var(--bg);
-  color: var(--text);
-}
+select option { background: var(--bg); color: var(--text); }
 html[data-theme="claro"] select option { background: #ffffff; }
 
 /* ══════════════════════════════════════════════
@@ -327,7 +326,6 @@ button:active { transform: translateY(0); }
   box-shadow: 0 4px 18px rgba(0, 224, 150, 0.3);
 }
 .btn-confirmar:hover { box-shadow: 0 6px 26px rgba(0, 224, 150, 0.45); }
-
 html[data-theme="claro"] .btn-confirmar {
   background: linear-gradient(135deg, #059669, #10b981);
   box-shadow: 0 4px 18px rgba(5, 150, 105, 0.3);
@@ -351,6 +349,163 @@ html[data-theme="claro"] .btn-confirmar {
 .controles-navegacao button { margin-top: 0; }
 
 /* ══════════════════════════════════════════════
+   PERFIL SELETOR (Aluno / Professor)
+══════════════════════════════════════════════ */
+.perfil-seletor {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  background: var(--input-bg);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.btn-perfil {
+  flex: 1;
+  margin: 0;
+  padding: 10px;
+  font-size: 0.875rem;
+  background: transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+  border-radius: calc(var(--radius-sm) - 4px);
+  border: none;
+}
+.btn-perfil:hover { background: rgba(255,255,255,0.04); box-shadow: none; transform: none; filter: none; }
+.btn-perfil.ativo {
+  background: var(--heading-gradient);
+  color: #fff;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+/* ══════════════════════════════════════════════
+   MENU GRID (botões grandes do menu)
+══════════════════════════════════════════════ */
+.menu-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-menu-opcao {
+  margin: 0;
+  padding: 20px 18px;
+  text-align: left;
+  font-size: 1rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+}
+.btn-menu-opcao:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 5px 18px rgba(0,0,0,0.2);
+  transform: translateY(-1px);
+  filter: none;
+}
+
+/* ══════════════════════════════════════════════
+   ABAS
+══════════════════════════════════════════════ */
+.abas-container {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+  margin-top: 14px;
+}
+
+.aba-btn {
+  all: unset;
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+.aba-btn:hover { color: var(--text); }
+.aba-btn.ativa { color: var(--primary); border-color: var(--primary); }
+
+/* ══════════════════════════════════════════════
+   LISTAS E BANCO DE DADOS
+══════════════════════════════════════════════ */
+.lista-atividades, .banco-dados-box {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  min-height: 120px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.item-lista {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+  color: var(--text);
+}
+.item-lista:last-child { border: none; }
+
+/* ══════════════════════════════════════════════
+   CARD DE QUESTÃO DO PROFESSOR
+══════════════════════════════════════════════ */
+.card-questao-professor {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-top: 14px;
+}
+.card-questao-professor h4 {
+  font-size: 0.875rem;
+  margin-bottom: 10px;
+  color: var(--primary);
+  font-family: 'Poppins', sans-serif;
+}
+
+.grid-alternativas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ══════════════════════════════════════════════
+   BADGE BOAS VINDAS
+══════════════════════════════════════════════ */
+.badge-boasvindas, #boas-vindas {
+  display: block;
+  text-align: center;
+  background: var(--input-bg);
+  border: 1px solid var(--border-hover);
+  color: var(--primary);
+  font-size: 0.83rem;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 20px;
+  width: fit-content;
+  margin: 0 auto 18px;
+}
+
+/* ══════════════════════════════════════════════
+   OPCOES NAV
+══════════════════════════════════════════════ */
+.opcoes-nav {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* ══════════════════════════════════════════════
    AULA HEADER + CONTADOR
 ══════════════════════════════════════════════ */
 .aula-header {
@@ -360,7 +515,6 @@ html[data-theme="claro"] .btn-confirmar {
   margin-bottom: 12px;
   gap: 8px;
 }
-
 .aula-header #titulo-aula {
   font-size: 1rem;
   font-weight: 600;
@@ -368,7 +522,6 @@ html[data-theme="claro"] .btn-confirmar {
   text-align: left;
   margin: 0;
 }
-
 .badge-contador {
   background: var(--input-bg);
   border: 1px solid var(--border-hover);
@@ -417,7 +570,6 @@ html[data-theme="claro"] .btn-confirmar {
   padding: 16px;
   margin: 14px 0;
 }
-
 .secao-resposta label {
   color: var(--text);
   font-size: 0.82rem;
@@ -425,14 +577,12 @@ html[data-theme="claro"] .btn-confirmar {
   letter-spacing: 0.6px;
   margin-bottom: 10px;
 }
-
 .input-resposta-wrap {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 .input-resposta-wrap input { flex: 1; margin: 0; }
-
 .btn-verificar {
   width: auto;
   padding: 13px 18px;
@@ -457,43 +607,16 @@ html[data-theme="claro"] .btn-confirmar {
   transition: opacity 0.3s, transform 0.3s;
 }
 #feedback.visivel { opacity: 1; transform: translateY(0); }
-#feedback.correto  { background: rgba(0,224,150,0.1);  border: 1px solid rgba(0,224,150,0.3);  color: var(--success); }
-#feedback.proximo  { background: rgba(255,184,0,0.1);  border: 1px solid rgba(255,184,0,0.3);  color: var(--warning); }
-#feedback.errado   { background: rgba(255,69,96,0.1);  border: 1px solid rgba(255,69,96,0.25); color: var(--danger);  }
+#feedback.correto { background: rgba(0,224,150,0.1);  border: 1px solid rgba(0,224,150,0.3);  color: var(--success); }
+#feedback.proximo { background: rgba(255,184,0,0.1);  border: 1px solid rgba(255,184,0,0.3);  color: var(--warning); }
+#feedback.errado  { background: rgba(255,69,96,0.1);  border: 1px solid rgba(255,69,96,0.25); color: var(--danger);  }
 
 html[data-theme="claro"] #feedback.correto { background: rgba(5,150,105,0.08);  border-color: rgba(5,150,105,0.3);  }
 html[data-theme="claro"] #feedback.proximo { background: rgba(217,119,6,0.08);  border-color: rgba(217,119,6,0.3);  }
 html[data-theme="claro"] #feedback.errado  { background: rgba(220,38,38,0.07);  border-color: rgba(220,38,38,0.25); }
 
 /* ══════════════════════════════════════════════
-   BOAS VINDAS BADGE
-══════════════════════════════════════════════ */
-#boas-vindas {
-  background: var(--input-bg);
-  border: 1px solid var(--border-hover);
-  color: var(--primary);
-  font-size: 0.83rem;
-  font-weight: 500;
-  padding: 5px 14px;
-  border-radius: 20px;
-  text-align: center;
-  display: block;
-  width: fit-content;
-  margin: 0 auto 18px;
-}
-
-/* ══════════════════════════════════════════════
-   OPCOES NAV
-══════════════════════════════════════════════ */
-.opcoes-nav {
-  text-align: center;
-  margin-top: 18px;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-/* ══════════════════════════════════════════════
-   PROGRESS
+   PROGRESS BAR
 ══════════════════════════════════════════════ */
 .progresso-wrap {
   display: flex;
@@ -515,8 +638,6 @@ html[data-theme="claro"] #feedback.errado  { background: rgba(220,38,38,0.07);  
   transition: width 0.4s ease;
 }
 .progresso-label { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
-
-hr { border: none; height: 1px; background: var(--border); margin: 18px 0; }
 
 /* ══════════════════════════════════════════════
    TEMA PICKER — flutuante
@@ -568,16 +689,10 @@ hr { border: none; height: 1px; background: var(--border); margin: 18px 0; }
   transition: background 0.2s, color 0.2s, border 0.2s;
   border: 1px solid transparent;
   white-space: nowrap;
+  font-family: 'Poppins', sans-serif;
 }
-.tema-btn:hover {
-  background: var(--input-bg);
-  color: var(--text);
-}
-.tema-btn.ativo {
-  background: var(--input-bg);
-  border-color: var(--border-hover);
-  color: var(--primary);
-}
+.tema-btn:hover { background: var(--input-bg); color: var(--text); }
+.tema-btn.ativo  { background: var(--input-bg); border-color: var(--border-hover); color: var(--primary); }
 
 .tema-dot {
   width: 11px;
@@ -587,7 +702,6 @@ hr { border: none; height: 1px; background: var(--border); margin: 18px 0; }
   transition: transform 0.2s;
 }
 .tema-btn:hover .tema-dot { transform: scale(1.2); }
-
 .tema-escuro .tema-dot { background: linear-gradient(135deg, #ff4560, #ff6b35); }
 .tema-claro  .tema-dot { background: linear-gradient(135deg, #2563eb, #3b82f6); }
 .tema-cinza  .tema-dot { background: linear-gradient(135deg, #475569, #94a3b8); }
