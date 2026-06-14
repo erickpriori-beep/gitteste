@@ -304,7 +304,7 @@ function salvarAtividadeProfessor() {
   };
 
   let atividadesSalvas = JSON.parse(localStorage.getItem('educa-atividades') || '[]');
-  atividadesSalvas.push(novaAttext);
+  atividadesSalvas.push(novaAtividade);
   localStorage.setItem('educa-atividades', JSON.stringify(atividadesSalvas));
 
   alert("Atividade publicada e enviada para todos os alunos! 🚀");
