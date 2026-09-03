@@ -178,6 +178,13 @@ function selecionarPerfil(perfil) {
   } else {
     document.getElementById('subtitulo-auth').innerText = `Preencha os dados para se registrar como ${perfilEmTexto(perfil)}`;
   }
+
+  const senhaLabel = document.getElementById('senha-label');
+  if (senhaLabel) {
+    senhaLabel.innerText = ['diretor', 'programador'].includes(perfil)
+      ? 'Senha secreta de acesso'
+      : 'Senha';
+  }
 }
 
 function alternarTela(login) {
@@ -190,9 +197,29 @@ function alternarTela(login) {
     : 'Já tem conta? <a onclick="alternarTela(true)">Fazer Login</a>';
 }
 
-function autenticar() {
+async function validarAcessoAdministrativo(perfil, senha) {
+  try {
+    const resposta = await fetch('/api/role-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ perfil, senha })
+    });
+    const dados = await resposta.json().catch(() => ({}));
+    if (!resposta.ok) {
+      alert(dados.message || 'Não foi possível validar a senha secreta.');
+      return false;
+    }
+    return dados.ok === true;
+  } catch (erro) {
+    alert('O servidor de segurança não está disponível. Tente novamente.');
+    return false;
+  }
+}
+
+async function autenticar() {
   const user = document.getElementById('usuario').value.trim().toLowerCase();
   const pass = document.getElementById('senha').value;
+  const perfilAdministrativo = ['diretor', 'programador'].includes(perfilSelecionado);
   if (!user || !pass) { alert("Por favor, preencha todos os campos."); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
     alert("Digite um e-mail válido para continuar.");
@@ -206,8 +233,14 @@ function autenticar() {
       return;
     }
 
-    // Salva o tipo do perfil junto com as credenciais.
-    const dadosUsuario = { email: user, senha: pass, perfil: perfilSelecionado };
+    if (perfilAdministrativo && !(await validarAcessoAdministrativo(perfilSelecionado, pass))) {
+      return;
+    }
+
+    // A senha administrativa nunca é salva no navegador.
+    const dadosUsuario = perfilAdministrativo
+      ? { email: user, perfil: perfilSelecionado, protegido: true }
+      : { email: user, senha: pass, perfil: perfilSelecionado };
     localStorage.setItem(chaveUsuario, JSON.stringify(dadosUsuario));
     registrarUsuario(dadosUsuario);
 
@@ -229,7 +262,11 @@ function autenticar() {
         return;
       }
 
-      if (dadosSalvos.senha === pass && dadosSalvos.perfil === perfilSelecionado) {
+      const senhaValida = perfilAdministrativo
+        ? await validarAcessoAdministrativo(perfilSelecionado, pass)
+        : dadosSalvos.senha === pass;
+
+      if (senhaValida && dadosSalvos.perfil === perfilSelecionado) {
         usuarioLogado = user;
         registrarUsuario({ email: user, perfil: dadosSalvos.perfil });
         document.getElementById('secao-auth').classList.add('hidden');
