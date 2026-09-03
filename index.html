@@ -180,6 +180,11 @@
                     <span class="menu-action-copy"><b>Atribuir Atividade</b><small>Crie e publique novas questões</small></span>
                     <span class="menu-action-arrow">→</span>
                 </button>
+                <button class="btn-menu-opcao" onclick="irParaAgendaAtividades()">
+                    <span class="menu-action-icon">🗓️</span>
+                    <span class="menu-action-copy"><b>Agenda</b><small>Programe quando cada atividade será lançada</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
             </div>
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
@@ -217,6 +222,11 @@
                 <button class="btn-menu-opcao" onclick="irParaAtribuirAtividade()">
                     <span class="menu-action-icon">➕</span>
                     <span class="menu-action-copy"><b>Criar atividade</b><small>Publique uma atividade para os alunos</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaAgendaAtividades()">
+                    <span class="menu-action-icon">🗓️</span>
+                    <span class="menu-action-copy"><b>Agenda de lançamentos</b><small>Planeje atividades por data e por aluno</small></span>
                     <span class="menu-action-arrow">→</span>
                 </button>
             </div>
@@ -288,13 +298,41 @@
             <button onclick="voltarParaMenuGestao()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
         </div>
 
+        <div id="secao-agenda-atividades" class="hidden">
+            <h2>Agenda de lançamentos</h2>
+            <p>As atividades aparecem para os alunos selecionados na data programada</p>
+            <div id="resumo-agenda" class="resumo-grid agenda-resumo"></div>
+            <div id="lista-agenda-atividades" class="lista-atividades agenda-lista"></div>
+            <button onclick="irParaAtribuirAtividade()" class="btn-confirmar" style="margin-top: 16px;">+ Agendar nova atividade</button>
+            <button onclick="voltarParaMenuGestao()" class="btn-voltar" style="margin-top: 10px;">← Voltar ao Menu</button>
+        </div>
+
         <div id="secao-atribuir-atividade" class="hidden">
             <h2>Criar Nova Atividade</h2>
-            <p>Limite máximo de 8 questões por atividade</p>
+            <p>Defina quando e para quem a atividade será lançada</p>
             
             <div class="campo" style="margin-top: 15px;">
                 <label>Título da Atividade</label>
                 <input type="text" id="titulo-nova-atividade" placeholder="Ex: Simulado de Álgebra">
+            </div>
+
+            <div class="agenda-form-box">
+                <div class="campo">
+                    <label for="data-lancamento-atividade">Data e hora do lançamento</label>
+                    <input type="datetime-local" id="data-lancamento-atividade" required>
+                    <small class="campo-ajuda">Quando chegar este momento, a atividade ficará disponível automaticamente.</small>
+                </div>
+                <div class="seletor-alunos-header">
+                    <div>
+                        <label>Alunos que receberão a atividade</label>
+                        <small class="campo-ajuda">Selecione pelo menos um aluno.</small>
+                    </div>
+                    <label class="checkbox-opcao checkbox-todos">
+                        <input type="checkbox" id="selecionar-todos-alunos" onchange="alternarTodosAlunosAtividade(this.checked)">
+                        <span>Selecionar todos</span>
+                    </label>
+                </div>
+                <div id="seletor-alunos-atividade" class="seletor-alunos"></div>
             </div>
 
             <div id="container-questoes-criadas"></div>

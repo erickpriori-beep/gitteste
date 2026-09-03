@@ -1,6 +1,7 @@
 let modoLogin = true;
 let perfilSelecionado = 'aluno'; // 'aluno', 'professor', 'diretor' ou 'programador'
 let usuarioLogado = null;
+let intervaloAgenda = null;
 
 let questaoAtual = null;
 let filaQuestoes = [];
@@ -37,6 +38,53 @@ function lerAtividadesSalvas() {
     console.warn('Não foi possível ler as atividades salvas.', erro);
     return [];
   }
+}
+
+function obterAlunosDisponiveis() {
+  let usuarios = lerUsuariosSalvos();
+  if (usuarios.length === 0) {
+    try {
+      const listaLegada = JSON.parse(localStorage.getItem('educa-lista-alunos') || '[]');
+      usuarios = Array.isArray(listaLegada)
+        ? listaLegada.map(email => ({ email, perfil: 'aluno' }))
+        : [];
+    } catch (erro) {
+      usuarios = [];
+    }
+  }
+
+  return usuarios
+    .filter(usuario => usuario.perfil === 'aluno' && usuario.email)
+    .map(usuario => usuario.email.toLowerCase())
+    .filter((email, index, lista) => lista.indexOf(email) === index)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+function atividadeFoiLiberada(atividade) {
+  if (!atividade.publicadaEm) return true;
+  const dataLancamento = new Date(atividade.publicadaEm).getTime();
+  return Number.isFinite(dataLancamento) && dataLancamento <= Date.now();
+}
+
+function atividadeDisponivelParaAluno(atividade, email = usuarioLogado) {
+  if (!atividadeFoiLiberada(atividade)) return false;
+  if (!Array.isArray(atividade.alunosSelecionados)) return true;
+  return Boolean(email) && atividade.alunosSelecionados.includes(email.toLowerCase());
+}
+
+function formatarDataAgenda(data) {
+  const dataFormatada = new Date(data);
+  if (Number.isNaN(dataFormatada.getTime())) return 'Data inválida';
+  return dataFormatada.toLocaleString('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short'
+  });
+}
+
+function valorPadraoDataLancamento() {
+  const data = new Date(Date.now() + 60 * 60 * 1000);
+  const doisDigitos = valor => String(valor).padStart(2, '0');
+  return `${data.getFullYear()}-${doisDigitos(data.getMonth() + 1)}-${doisDigitos(data.getDate())}T${doisDigitos(data.getHours())}:${doisDigitos(data.getMinutes())}`;
 }
 
 function escapeHtml(valor) {
@@ -322,11 +370,17 @@ function atualizarEstatisticasMenus() {
   const alunos = usuarios.filter(usuario => usuario.perfil === 'aluno').length;
   const professores = usuarios.filter(usuario => usuario.perfil === 'professor').length;
   const atividadesDoAluno = usuarioLogado
-    ? atividades.filter(atividade => atividade.statusAlunos?.[usuarioLogado] !== 'concluida')
+    ? atividades.filter(atividade =>
+      atividadeDisponivelParaAluno(atividade) &&
+      atividade.statusAlunos?.[usuarioLogado] !== 'concluida'
+    )
+    : [];
+  const atividadesLiberadas = usuarioLogado
+    ? atividades.filter(atividade => atividadeDisponivelParaAluno(atividade))
     : [];
 
   definirTexto('aluno-total-atividades', usuarioLogado
-    ? atividades.filter(atividade => atividade.statusAlunos?.[usuarioLogado] !== undefined).length
+    ? atividadesLiberadas.length
     : 0);
   definirTexto('aluno-pendentes', atividadesDoAluno.length);
   definirTexto('professor-total-alunos', alunos);
@@ -396,11 +450,16 @@ function voltarParaMenuGestao() {
 }
 
 function ocultarTodasAsSecoes() {
+  if (intervaloAgenda) {
+    clearInterval(intervaloAgenda);
+    intervaloAgenda = null;
+  }
   const secoes = [
     'secao-auth', 'secao-menu-aluno', 'secao-curso', 'secao-atividades-aluno',
     'secao-menu-professor', 'secao-menu-diretor', 'secao-menu-programador',
     'secao-painel-diretor', 'secao-painel-programador',
-    'secao-gerenciar-alunos', 'secao-atribuir-atividade', 'secao-aula'
+    'secao-gerenciar-alunos', 'secao-agenda-atividades',
+    'secao-atribuir-atividade', 'secao-aula'
   ];
   secoes.forEach(id => {
     const el = document.getElementById(id);
@@ -528,8 +587,45 @@ function irParaAtribuirAtividade() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-atribuir-atividade').classList.remove('hidden');
   document.getElementById('titulo-nova-atividade').value = '';
+  document.getElementById('data-lancamento-atividade').value = valorPadraoDataLancamento();
+  document.getElementById('selecionar-todos-alunos').checked = false;
+  renderizarSeletorAlunosAtividade();
   questoesFormularioProfessor = [];
   renderizarFormularioQuestoes();
+}
+
+function renderizarSeletorAlunosAtividade() {
+  const container = document.getElementById('seletor-alunos-atividade');
+  const alunos = obterAlunosDisponiveis();
+  if (!alunos.length) {
+    container.innerHTML = '<div class="seletor-vazio">Nenhum aluno cadastrado. Cadastre alunos antes de agendar uma atividade.</div>';
+    return;
+  }
+
+  container.innerHTML = alunos.map((email, index) => `
+    <label class="checkbox-opcao aluno-opcao" for="aluno-atividade-${index}">
+      <input type="checkbox" id="aluno-atividade-${index}" value="${escapeHtml(email)}" onchange="atualizarEstadoSelecionarTodos()">
+      <span>${escapeHtml(email)}</span>
+    </label>
+  `).join('');
+}
+
+function alternarTodosAlunosAtividade(selecionado) {
+  document.querySelectorAll('#seletor-alunos-atividade input[type="checkbox"]').forEach(input => {
+    input.checked = selecionado;
+  });
+}
+
+function atualizarEstadoSelecionarTodos() {
+  const caixas = [...document.querySelectorAll('#seletor-alunos-atividade input[type="checkbox"]')];
+  const todos = caixas.length > 0 && caixas.every(input => input.checked);
+  const seletorTodos = document.getElementById('selecionar-todos-alunos');
+  if (seletorTodos) seletorTodos.checked = todos;
+}
+
+function obterAlunosSelecionadosAtividade() {
+  return [...document.querySelectorAll('#seletor-alunos-atividade input[type="checkbox"]:checked')]
+    .map(input => input.value.toLowerCase());
 }
 
 function adicionarNovaQuestaoForm() {
@@ -594,7 +690,18 @@ function salvarDadosCamposProfessor(index, campo, valor) {
 
 function salvarAtividadeProfessor() {
   const titulo = document.getElementById('titulo-nova-atividade').value.trim();
+  const dataLancamentoTexto = document.getElementById('data-lancamento-atividade').value;
+  const dataLancamento = new Date(dataLancamentoTexto);
+  const alunosSelecionados = obterAlunosSelecionadosAtividade();
   if (!titulo) { alert("Dê um título para a sua atividade."); return; }
+  if (!dataLancamentoTexto || Number.isNaN(dataLancamento.getTime())) {
+    alert("Defina uma data e hora válidas para o lançamento.");
+    return;
+  }
+  if (alunosSelecionados.length === 0) {
+    alert("Selecione pelo menos um aluno para receber a atividade.");
+    return;
+  }
   if (questoesFormularioProfessor.length === 0) { alert("Adicione pelo menos 1 questão."); return; }
   const formularioIncompleto = questoesFormularioProfessor.some(q =>
     !q.enunciado.trim() || !q.a.trim() || !q.b.trim() || !q.c.trim() || !q.d.trim()
@@ -609,6 +716,8 @@ function salvarAtividadeProfessor() {
     id: 'act_' + Date.now(),
     titulo: titulo,
     criador: usuarioLogado,
+    publicadaEm: dataLancamento.toISOString(),
+    alunosSelecionados,
     questoes: questoesFormularioProfessor.map(q => {
       return {
         conteudo: `<b>📝 Atividade: ${escapeHtml(titulo)}</b><br><br>${escapeHtml(q.enunciado)}<br><br><b>A)</b> ${escapeHtml(q.a)}<br><b>B)</b> ${escapeHtml(q.b)}<br><b>C)</b> ${escapeHtml(q.c)}<br><b>D)</b> ${escapeHtml(q.d)}`,
@@ -624,8 +733,69 @@ function salvarAtividadeProfessor() {
   atividadesSalvas.push(novaAtividade);
   localStorage.setItem('educa-atividades', JSON.stringify(atividadesSalvas));
 
-  alert("Atividade publicada e enviada para todos os alunos! 🚀");
+  alert(`Atividade agendada para ${formatarDataAgenda(novaAtividade.publicadaEm)} e enviada para ${alunosSelecionados.length} aluno(s)! 🗓️`);
   voltarParaMenuProfessor();
+}
+
+function irParaAgendaAtividades() {
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-agenda-atividades').classList.remove('hidden');
+  renderizarAgendaAtividades();
+
+  if (intervaloAgenda) clearInterval(intervaloAgenda);
+  intervaloAgenda = setInterval(renderizarAgendaAtividades, 30000);
+}
+
+function renderizarAgendaAtividades() {
+  const lista = document.getElementById('lista-agenda-atividades');
+  const resumo = document.getElementById('resumo-agenda');
+  if (!lista || !resumo) return;
+
+  const atividades = lerAtividadesSalvas().filter(atividade =>
+    perfilSelecionado === 'diretor' || atividade.criador === usuarioLogado
+  );
+  const agendadas = atividades.filter(atividade => !atividadeFoiLiberada(atividade));
+  const liberadas = atividades.filter(atividade => atividadeFoiLiberada(atividade));
+
+  resumo.innerHTML = `
+    <div class="resumo-card"><strong>${agendadas.length}</strong><span>Agendadas</span></div>
+    <div class="resumo-card"><strong>${liberadas.length}</strong><span>Já lançadas</span></div>
+    <div class="resumo-card"><strong>${atividades.length}</strong><span>Total</span></div>
+  `;
+
+  if (!atividades.length) {
+    lista.innerHTML = '<div class="item-lista" style="color: var(--text-muted)">Nenhuma atividade na agenda ainda.</div>';
+    return;
+  }
+
+  atividades.sort((a, b) => {
+    const dataA = new Date(a.publicadaEm || 0).getTime();
+    const dataB = new Date(b.publicadaEm || 0).getTime();
+    return dataA - dataB;
+  });
+
+  lista.innerHTML = atividades.map(atividade => {
+    const liberada = atividadeFoiLiberada(atividade);
+    const alunos = Array.isArray(atividade.alunosSelecionados)
+      ? `${atividade.alunosSelecionados.length} aluno(s) selecionado(s)`
+      : 'Todos os alunos';
+    const data = atividade.publicadaEm
+      ? formatarDataAgenda(atividade.publicadaEm)
+      : 'Disponível imediatamente';
+    return `
+      <div class="agenda-item">
+        <div class="agenda-item-topo">
+          <b>📋 ${escapeHtml(atividade.titulo)}</b>
+          <span class="agenda-status ${liberada ? 'liberada' : 'agendada'}">${liberada ? '✓ Lançada' : '◷ Agendada'}</span>
+        </div>
+        <div class="agenda-item-detalhes">
+          <span>🗓️ ${data}</span>
+          <span>👥 ${alunos}</span>
+          ${perfilSelecionado === 'diretor' ? `<span>✍️ ${escapeHtml(atividade.criador || 'conta administrativa')}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // ── RECURSO DO ALUNO: CENTRAL DE ABAS DE ATIVIDADES ──────────────────
@@ -650,7 +820,9 @@ function renderizarListaAtividadesAluno() {
   const container = document.getElementById('lista-atividades-container');
   container.innerHTML = '';
 
-  let atividadesSalvas = lerAtividadesSalvas();
+  let atividadesSalvas = lerAtividadesSalvas().filter(atividade =>
+    atividadeDisponivelParaAluno(atividade)
+  );
   const totais = { recentes: atividadesSalvas.length, pendentes: 0, concluidas: 0 };
   atividadesSalvas.forEach(act => {
     const status = (act.statusAlunos || {})[usuarioLogado];
