@@ -1,5 +1,5 @@
 let modoLogin = true;
-let perfilSelecionado = 'aluno'; // 'aluno' ou 'professor'
+let perfilSelecionado = 'aluno'; // 'aluno', 'professor', 'diretor' ou 'programador'
 let usuarioLogado = null;
 
 let questaoAtual = null;
@@ -17,6 +17,17 @@ let abaAtivaAluno = 'recentes';
 let bancoAtividadesCustomizadas = [];
 // Armazena temporariamente as questões que o professor está montando no formulário (Máx 8)
 let questoesFormularioProfessor = [];
+
+const nomesPerfis = {
+  aluno: 'Aluno',
+  professor: 'Professor',
+  diretor: 'Diretor',
+  programador: 'Programador'
+};
+
+function perfilEmTexto(perfil) {
+  return nomesPerfis[perfil] || nomesPerfis.aluno;
+}
 
 function lerAtividadesSalvas() {
   try {
@@ -156,14 +167,16 @@ const banco = {
 
 // ── FLUXO DE LOGIN E PERFIL ──────────────────────────────────────────
 function selecionarPerfil(perfil) {
+  if (!nomesPerfis[perfil]) perfil = 'aluno';
   perfilSelecionado = perfil;
   document.querySelectorAll('.btn-perfil').forEach(btn => btn.classList.remove('ativo'));
-  document.getElementById(`perfil-${perfil}`).classList.add('ativo');
+  const botaoPerfil = document.getElementById(`perfil-${perfil}`);
+  if (botaoPerfil) botaoPerfil.classList.add('ativo');
 
   if (modoLogin) {
-    document.getElementById('subtitulo-auth').innerText = `Faça login como ${perfil === 'aluno' ? 'Aluno' : 'Professor'} para continuar`;
+    document.getElementById('subtitulo-auth').innerText = `Faça login como ${perfilEmTexto(perfil)} para continuar`;
   } else {
-    document.getElementById('subtitulo-auth').innerText = `Preencha os dados para se registrar como ${perfil === 'aluno' ? 'Aluno' : 'Professor'}`;
+    document.getElementById('subtitulo-auth').innerText = `Preencha os dados para se registrar como ${perfilEmTexto(perfil)}`;
   }
 }
 
@@ -178,35 +191,57 @@ function alternarTela(login) {
 }
 
 function autenticar() {
-  const user = document.getElementById('usuario').value.trim();
+  const user = document.getElementById('usuario').value.trim().toLowerCase();
   const pass = document.getElementById('senha').value;
   if (!user || !pass) { alert("Por favor, preencha todos os campos."); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
+    alert("Digite um e-mail válido para continuar.");
+    return;
+  }
 
   if (!modoLogin) {
-    // Salva o tipo do perfil junto com as credenciais
-    const dadosUsuario = { senha: pass, perfil: perfilSelecionado };
-    localStorage.setItem('user_' + user, JSON.stringify(dadosUsuario));
+    const chaveUsuario = 'user_' + user;
+    if (localStorage.getItem(chaveUsuario)) {
+      alert("Este e-mail já está cadastrado. Faça login ou use outro e-mail.");
+      return;
+    }
+
+    // Salva o tipo do perfil junto com as credenciais.
+    const dadosUsuario = { email: user, senha: pass, perfil: perfilSelecionado };
+    localStorage.setItem(chaveUsuario, JSON.stringify(dadosUsuario));
+    registrarUsuario(dadosUsuario);
 
     // Adiciona ao banco de dados simulado caso seja um aluno
     if (perfilSelecionado === 'aluno') {
       atualizarBancoAlunosLocal(user);
     }
 
-    alert(`Conta de ${perfilSelecionado.toUpperCase()} criada com sucesso! 🎉`);
+    alert(`Conta de ${perfilEmTexto(perfilSelecionado).toUpperCase()} criada com sucesso! 🎉`);
     alternarTela(true);
   } else {
     const dadosSalvosRaw = localStorage.getItem('user_' + user);
     if (dadosSalvosRaw) {
-      const dadosSalvos = JSON.parse(dadosSalvosRaw);
+      let dadosSalvos;
+      try {
+        dadosSalvos = JSON.parse(dadosSalvosRaw);
+      } catch (erro) {
+        alert("Não foi possível ler esta conta. Faça um novo cadastro.");
+        return;
+      }
 
       if (dadosSalvos.senha === pass && dadosSalvos.perfil === perfilSelecionado) {
         usuarioLogado = user;
+        registrarUsuario({ email: user, perfil: dadosSalvos.perfil });
         document.getElementById('secao-auth').classList.add('hidden');
 
         if (perfilSelecionado === 'aluno') {
           entrarMenuAluno();
-        } else {
+        } else if (perfilSelecionado === 'professor') {
           entrarMenuProfessor();
+        } else if (perfilSelecionado === 'diretor') {
+          entrarMenuDiretor();
+        } else {
+          entrarMenuProgramador();
         }
       } else {
         alert("Senha incorreta ou perfil de acesso inválido.");
@@ -219,8 +254,7 @@ function autenticar() {
 
 function fazerLogout() {
   usuarioLogado = null;
-  document.getElementById('secao-menu-aluno').classList.add('hidden');
-  document.getElementById('secao-menu-professor').classList.add('hidden');
+  ocultarTodasAsSecoes();
   document.getElementById('secao-auth').classList.remove('hidden');
   document.getElementById('usuario').value = '';
   document.getElementById('senha').value = '';
@@ -239,6 +273,18 @@ function entrarMenuProfessor() {
   document.getElementById('boas-vindas-professor').innerText = `👨‍🏫 Mestre ${usuarioLogado}`;
 }
 
+function entrarMenuDiretor() {
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-menu-diretor').classList.remove('hidden');
+  document.getElementById('boas-vindas-diretor').innerText = `👋 Olá, Diretor(a) ${usuarioLogado}`;
+}
+
+function entrarMenuProgramador() {
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-menu-programador').classList.remove('hidden');
+  document.getElementById('boas-vindas-programador').innerText = `💻 Olá, ${usuarioLogado}`;
+}
+
 function irParaTreino() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-curso').classList.remove('hidden');
@@ -252,15 +298,101 @@ function voltarParaMenuProfessor() {
   entrarMenuProfessor();
 }
 
+function voltarParaMenuDiretor() {
+  entrarMenuDiretor();
+}
+
+function voltarParaMenuProgramador() {
+  entrarMenuProgramador();
+}
+
+function voltarParaMenuGestao() {
+  if (perfilSelecionado === 'diretor') voltarParaMenuDiretor();
+  else if (perfilSelecionado === 'programador') voltarParaMenuProgramador();
+  else voltarParaMenuProfessor();
+}
+
 function ocultarTodasAsSecoes() {
-  const secoes = ['secao-auth', 'secao-menu-aluno', 'secao-curso', 'secao-atividades-aluno', 'secao-menu-professor', 'secao-gerenciar-alunos', 'secao-atribuir-atividade', 'secao-aula'];
+  const secoes = [
+    'secao-auth', 'secao-menu-aluno', 'secao-curso', 'secao-atividades-aluno',
+    'secao-menu-professor', 'secao-menu-diretor', 'secao-menu-programador',
+    'secao-painel-diretor', 'secao-painel-programador',
+    'secao-gerenciar-alunos', 'secao-atribuir-atividade', 'secao-aula'
+  ];
   secoes.forEach(id => {
     const el = document.getElementById(id);
     if(el) el.classList.add('hidden');
   });
 }
 
-// ── RECURSO DO PROFESSOR 1: GERENCIAR ALUNOS ─────────────────────────
+// ── PAINÉIS ADMINISTRATIVOS E REGISTRO DE CONTAS ─────────────────────
+function lerUsuariosSalvos() {
+  try {
+    const usuarios = JSON.parse(localStorage.getItem('educa-usuarios') || '[]');
+    return Array.isArray(usuarios) ? usuarios : [];
+  } catch (erro) {
+    console.warn('Não foi possível ler os usuários salvos.', erro);
+    return [];
+  }
+}
+
+function registrarUsuario(dadosUsuario) {
+  if (!dadosUsuario?.email) return;
+  const usuarios = lerUsuariosSalvos();
+  const email = dadosUsuario.email.toLowerCase();
+  const existente = usuarios.find(usuario => usuario.email === email);
+  if (existente) {
+    existente.perfil = dadosUsuario.perfil;
+  } else {
+    usuarios.push({
+      email,
+      perfil: dadosUsuario.perfil,
+      cadastradoEm: new Date().toISOString()
+    });
+  }
+  localStorage.setItem('educa-usuarios', JSON.stringify(usuarios));
+}
+
+function irParaPainelDiretor() {
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-painel-diretor').classList.remove('hidden');
+
+  const usuarios = lerUsuariosSalvos();
+  const atividades = lerAtividadesSalvas();
+  const alunos = usuarios.filter(usuario => usuario.perfil === 'aluno').length;
+  const professores = usuarios.filter(usuario => usuario.perfil === 'professor').length;
+  const concluicoes = atividades.reduce((total, atividade) =>
+    total + Object.values(atividade.statusAlunos || {}).filter(status => status === 'concluida').length, 0
+  );
+
+  document.getElementById('resumo-diretor').innerHTML = `
+    <div class="resumo-card"><strong>${alunos}</strong><span>Alunos</span></div>
+    <div class="resumo-card"><strong>${professores}</strong><span>Professores</span></div>
+    <div class="resumo-card"><strong>${atividades.length}</strong><span>Atividades</span></div>
+    <div class="resumo-card"><strong>${concluicoes}</strong><span>Conclusões</span></div>
+  `;
+  document.getElementById('resumo-atividades-diretor').innerHTML = atividades.length
+    ? `<b>Atividades publicadas</b><br><br>${atividades.map(atividade =>
+      `📋 ${escapeHtml(atividade.titulo)} <small>— por ${escapeHtml(atividade.criador || 'conta administrativa')}</small>`
+    ).join('<br>')}`
+    : '<span style="color: var(--text-muted)">Nenhuma atividade foi publicada ainda.</span>';
+}
+
+function irParaPainelProgramador() {
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-painel-programador').classList.remove('hidden');
+
+  const usuarios = lerUsuariosSalvos();
+  const atividades = lerAtividadesSalvas();
+  document.getElementById('resumo-programador').innerHTML = `
+    <div class="resumo-card"><strong>${usuarios.length}</strong><span>Contas</span></div>
+    <div class="resumo-card"><strong>${atividades.length}</strong><span>Atividades</span></div>
+    <div class="resumo-card"><strong>${localStorage.length}</strong><span>Registros locais</span></div>
+    <div class="resumo-card"><strong>OK</strong><span>Status</span></div>
+  `;
+}
+
+// ── RECURSO DO PROFESSOR/DIRETOR: GERENCIAR USUÁRIOS ────────────────
 function irParaGerenciarAlunos() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-gerenciar-alunos').classList.remove('hidden');
@@ -268,23 +400,40 @@ function irParaGerenciarAlunos() {
   const container = document.getElementById('banco-alunos-lista');
   container.innerHTML = '';
 
-  let listaAlunos = JSON.parse(localStorage.getItem('educa-lista-alunos') || '[]');
+  let usuarios = lerUsuariosSalvos();
+  // Compatibilidade com cadastros de aluno criados antes do registro por e-mail.
+  if (usuarios.length === 0) {
+    let listaAlunos = [];
+    try {
+      listaAlunos = JSON.parse(localStorage.getItem('educa-lista-alunos') || '[]');
+    } catch (erro) {
+      listaAlunos = [];
+    }
+    usuarios = listaAlunos.map(email => ({ email, perfil: 'aluno' }));
+  }
 
-  if (listaAlunos.length === 0) {
-    container.innerHTML = '<div class="item-lista" style="color: var(--text-muted)">Nenhum aluno registrado no banco ainda.</div>';
+  if (usuarios.length === 0) {
+    container.innerHTML = '<div class="item-lista" style="color: var(--text-muted)">Nenhuma conta registrada ainda.</div>';
     return;
   }
 
-  listaAlunos.forEach(aluno => {
+  usuarios.sort((a, b) => a.email.localeCompare(b.email)).forEach(usuario => {
     const div = document.createElement('div');
     div.className = 'item-lista';
-    div.innerHTML = `👤 <b>${aluno}</b> — Perfil: Aluno Ativo <span style="float: right; color: var(--success)">● Online</span>`;
+    const icones = { aluno: '🧑‍🎓', professor: '👨‍🏫', diretor: '🏫', programador: '💻' };
+    div.innerHTML = `${icones[usuario.perfil] || '👤'} <b>${escapeHtml(usuario.email)}</b>
+      <span class="perfil-tag">${perfilEmTexto(usuario.perfil)}</span>`;
     container.appendChild(div);
   });
 }
 
 function atualizarBancoAlunosLocal(novoAluno) {
-  let listaAlunos = JSON.parse(localStorage.getItem('educa-lista-alunos') || '[]');
+  let listaAlunos;
+  try {
+    listaAlunos = JSON.parse(localStorage.getItem('educa-lista-alunos') || '[]');
+  } catch (erro) {
+    listaAlunos = [];
+  }
   if (!listaAlunos.includes(novoAluno)) {
     listaAlunos.push(novoAluno);
     localStorage.setItem('educa-lista-alunos', JSON.stringify(listaAlunos));

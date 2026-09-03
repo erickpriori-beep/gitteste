@@ -40,6 +40,8 @@
             <div class="perfil-seletor">
                 <button type="button" class="btn-perfil ativo" id="perfil-aluno" onclick="selecionarPerfil('aluno')">Sou Aluno</button>
                 <button type="button" class="btn-perfil" id="perfil-professor" onclick="selecionarPerfil('professor')">Sou Professor</button>
+                <button type="button" class="btn-perfil" id="perfil-diretor" onclick="selecionarPerfil('diretor')">Sou Diretor</button>
+                <button type="button" class="btn-perfil" id="perfil-programador" onclick="selecionarPerfil('programador')">Sou Programador</button>
             </div>
 
             <h1 id="titulo-auth">Bem-vindo de volta</h1>
@@ -49,8 +51,8 @@
 
             <form id="auth-form" onsubmit="event.preventDefault(); autenticar()">
                 <div class="campo">
-                    <label for="usuario">Usuário</label>
-                    <input type="text" id="usuario" placeholder="Ex: ze_gamer" autocomplete="username">
+                    <label for="usuario">E-mail de acesso</label>
+                    <input type="email" id="usuario" placeholder="voce@exemplo.com" autocomplete="email">
                 </div>
                 <div class="campo">
                     <label for="senha">Senha</label>
@@ -142,15 +144,64 @@
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
 
+        <div id="secao-menu-diretor" class="hidden">
+            <div class="logo-badge">
+                <div class="logo-icon">🏫</div>
+                <span class="logo-text">educa+ Direção</span>
+            </div>
+            <span id="boas-vindas-diretor" class="badge-boasvindas"></span>
+
+            <div class="menu-grid">
+                <button class="btn-menu-opcao" onclick="irParaPainelDiretor()">📊 Visão geral da escola</button>
+                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">👥 Usuários cadastrados</button>
+                <button class="btn-menu-opcao" onclick="irParaAtribuirAtividade()">➕ Criar atividade</button>
+            </div>
+            <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
+        </div>
+
+        <div id="secao-menu-programador" class="hidden">
+            <div class="logo-badge">
+                <div class="logo-icon">💻</div>
+                <span class="logo-text">educa+ Tech</span>
+            </div>
+            <span id="boas-vindas-programador" class="badge-boasvindas"></span>
+
+            <div class="menu-grid">
+                <button class="btn-menu-opcao" onclick="irParaPainelProgramador()">🛠️ Painel do sistema</button>
+                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">👥 Ver usuários cadastrados</button>
+            </div>
+            <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
+        </div>
+
+        <div id="secao-painel-diretor" class="hidden">
+            <h2>Visão geral da escola</h2>
+            <p>Acompanhe os cadastros e as atividades da plataforma</p>
+            <div id="resumo-diretor" class="resumo-grid"></div>
+            <div class="divider"></div>
+            <div id="resumo-atividades-diretor" class="banco-dados-box"></div>
+            <button onclick="voltarParaMenuDiretor()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+        </div>
+
+        <div id="secao-painel-programador" class="hidden">
+            <h2>Painel do sistema</h2>
+            <p>Informações técnicas do ambiente local</p>
+            <div id="resumo-programador" class="resumo-grid"></div>
+            <div class="status-sistema">
+                <span class="status-ponto"></span>
+                Armazenamento local conectado e pronto para uso
+            </div>
+            <button onclick="voltarParaMenuProgramador()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+        </div>
+
         <div id="secao-gerenciar-alunos" class="hidden">
-            <h2>Alunos Cadastrados</h2>
-            <p>Visualização em tempo real do banco de dados</p>
+            <h2>Usuários Cadastrados</h2>
+            <p>Contas registradas com e-mail na plataforma</p>
             <div class="divider"></div>
             
             <div id="banco-alunos-lista" class="banco-dados-box">
                 </div>
             
-            <button onclick="voltarParaMenuProfessor()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+            <button onclick="voltarParaMenuGestao()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
         </div>
 
         <div id="secao-atribuir-atividade" class="hidden">
@@ -169,7 +220,7 @@
                 <button type="button" onclick="salvarAtividadeProfessor()" class="btn-confirmar">Salvar e Publicar</button>
             </div>
 
-            <button onclick="voltarParaMenuProfessor()" class="btn-voltar" style="margin-top: 10px;">← Cancelar</button>
+            <button onclick="voltarParaMenuGestao()" class="btn-voltar" style="margin-top: 10px;">← Cancelar</button>
         </div>
 
 

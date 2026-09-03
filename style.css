@@ -352,7 +352,8 @@ html[data-theme="claro"] .btn-confirmar {
    PERFIL SELETOR (Aluno / Professor)
 ══════════════════════════════════════════════ */
 .perfil-seletor {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
   margin-bottom: 20px;
   background: var(--input-bg);
@@ -474,6 +475,71 @@ html[data-theme="claro"] .btn-confirmar {
   color: var(--text);
 }
 .item-lista:last-child { border: none; }
+
+.perfil-tag {
+  float: right;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════
+   PAINÉIS DE DIREÇÃO E TECNOLOGIA
+══════════════════════════════════════════════ */
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.resumo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 14px 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.resumo-card strong {
+  color: var(--primary);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.resumo-card span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+.status-sistema {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  color: var(--text-muted);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+}
+
+.status-ponto {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 10px var(--success);
+}
 
 /* ══════════════════════════════════════════════
    CARD DE QUESTÃO DO PROFESSOR
@@ -730,6 +796,7 @@ html[data-theme="claro"] #feedback.errado  { background: rgba(220,38,38,0.07);  
 @media (max-width: 560px) {
   body { padding: 14px 12px 76px; }
   .container { padding: 34px 22px; }
+  .resumo-grid { grid-template-columns: 1fr 1fr; }
   .abas-container { gap: 2px; }
   .aba-btn { font-size: 0.72rem; }
   .aba-contador { min-width: 17px; height: 17px; padding: 0 4px; }
