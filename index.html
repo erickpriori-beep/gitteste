@@ -54,6 +54,26 @@
                     <label for="usuario">E-mail de acesso</label>
                     <input type="email" id="usuario" placeholder="voce@exemplo.com" autocomplete="email">
                 </div>
+                <div class="campo turma-auth-campo" id="turma-auth-campo">
+                    <label for="turma-aluno">Sala / Turma</label>
+                    <select id="turma-aluno" autocomplete="organization-title">
+                        <option value="">Selecione sua sala</option>
+                        <option value="1A">1º A</option>
+                        <option value="1B">1º B</option>
+                        <option value="1C">1º C</option>
+                        <option value="2A">2º A</option>
+                        <option value="2B">2º B</option>
+                        <option value="2C">2º C</option>
+                        <option value="2D">2º D</option>
+                        <option value="3A">3º A</option>
+                        <option value="3B">3º B</option>
+                        <option value="3C">3º C</option>
+                        <option value="9A">9º A</option>
+                        <option value="9B">9º B</option>
+                        <option value="9C">9º C</option>
+                    </select>
+                    <small class="campo-ajuda">A turma fica vinculada à sua conta para organizar as atividades.</small>
+                </div>
                 <div class="campo">
                     <label id="senha-label" for="senha">Senha</label>
                     <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
@@ -292,8 +312,7 @@
             <p>Contas registradas com e-mail na plataforma</p>
             <div class="divider"></div>
             
-            <div id="banco-alunos-lista" class="banco-dados-box">
-                </div>
+            <div id="banco-alunos-lista" class="banco-dados-box"></div>
             
             <button onclick="voltarParaMenuGestao()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
         </div>

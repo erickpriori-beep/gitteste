@@ -26,8 +26,28 @@ const nomesPerfis = {
   programador: 'Programador'
 };
 
+const turmasDisponiveis = [
+  { valor: '1A', texto: '1º A' },
+  { valor: '1B', texto: '1º B' },
+  { valor: '1C', texto: '1º C' },
+  { valor: '2A', texto: '2º A' },
+  { valor: '2B', texto: '2º B' },
+  { valor: '2C', texto: '2º C' },
+  { valor: '2D', texto: '2º D' },
+  { valor: '3A', texto: '3º A' },
+  { valor: '3B', texto: '3º B' },
+  { valor: '3C', texto: '3º C' },
+  { valor: '9A', texto: '9º A' },
+  { valor: '9B', texto: '9º B' },
+  { valor: '9C', texto: '9º C' }
+];
+
 function perfilEmTexto(perfil) {
   return nomesPerfis[perfil] || nomesPerfis.aluno;
+}
+
+function turmaEmTexto(turma) {
+  return turmasDisponiveis.find(opcao => opcao.valor === turma)?.texto || 'Sem turma';
 }
 
 function lerAtividadesSalvas() {
@@ -40,7 +60,7 @@ function lerAtividadesSalvas() {
   }
 }
 
-function obterAlunosDisponiveis() {
+function obterAlunosComTurma() {
   let usuarios = lerUsuariosSalvos();
   if (usuarios.length === 0) {
     try {
@@ -55,9 +75,23 @@ function obterAlunosDisponiveis() {
 
   return usuarios
     .filter(usuario => usuario.perfil === 'aluno' && usuario.email)
-    .map(usuario => usuario.email.toLowerCase())
-    .filter((email, index, lista) => lista.indexOf(email) === index)
-    .sort((a, b) => a.localeCompare(b));
+    .map(usuario => ({
+      email: usuario.email.toLowerCase(),
+      turma: usuario.turma || ''
+    }))
+    .filter((aluno, index, lista) =>
+      lista.findIndex(outro => outro.email === aluno.email) === index
+    )
+    .sort((a, b) => {
+      const turmaA = turmasDisponiveis.findIndex(opcao => opcao.valor === a.turma);
+      const turmaB = turmasDisponiveis.findIndex(opcao => opcao.valor === b.turma);
+      return (turmaA === -1 ? 999 : turmaA) - (turmaB === -1 ? 999 : turmaB)
+        || a.email.localeCompare(b.email);
+    });
+}
+
+function obterAlunosDisponiveis() {
+  return obterAlunosComTurma().map(aluno => aluno.email);
 }
 
 function atividadeFoiLiberada(atividade) {
@@ -233,6 +267,9 @@ function selecionarPerfil(perfil) {
       ? 'Senha secreta de acesso'
       : 'Senha';
   }
+
+  const turmaCampo = document.getElementById('turma-auth-campo');
+  if (turmaCampo) turmaCampo.classList.toggle('hidden', perfil !== 'aluno');
 }
 
 function alternarTela(login) {
@@ -267,10 +304,15 @@ async function validarAcessoAdministrativo(perfil, senha) {
 async function autenticar() {
   const user = document.getElementById('usuario').value.trim().toLowerCase();
   const pass = document.getElementById('senha').value;
+  const turma = document.getElementById('turma-aluno')?.value || '';
   const perfilAdministrativo = ['diretor', 'programador'].includes(perfilSelecionado);
   if (!user || !pass) { alert("Por favor, preencha todos os campos."); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
     alert("Digite um e-mail válido para continuar.");
+    return;
+  }
+  if (perfilSelecionado === 'aluno' && !turma) {
+    alert("Selecione sua sala para continuar.");
     return;
   }
 
@@ -288,7 +330,12 @@ async function autenticar() {
     // A senha administrativa nunca é salva no navegador.
     const dadosUsuario = perfilAdministrativo
       ? { email: user, perfil: perfilSelecionado, protegido: true }
-      : { email: user, senha: pass, perfil: perfilSelecionado };
+      : {
+        email: user,
+        senha: pass,
+        perfil: perfilSelecionado,
+        ...(perfilSelecionado === 'aluno' ? { turma } : {})
+      };
     localStorage.setItem(chaveUsuario, JSON.stringify(dadosUsuario));
     registrarUsuario(dadosUsuario);
 
@@ -330,22 +377,39 @@ async function autenticar() {
 
     const senhaValida = perfilAdministrativo || dadosSalvos.senha === pass;
 
-    if (senhaValida && dadosSalvos.perfil === perfilSelecionado) {
-      usuarioLogado = user;
-      registrarUsuario({ email: user, perfil: dadosSalvos.perfil });
-      document.getElementById('secao-auth').classList.add('hidden');
-
-      if (perfilSelecionado === 'aluno') {
-        entrarMenuAluno();
-      } else if (perfilSelecionado === 'professor') {
-        entrarMenuProfessor();
-      } else if (perfilSelecionado === 'diretor') {
-        entrarMenuDiretor();
-      } else {
-        entrarMenuProgramador();
-      }
-    } else {
+    if (!(senhaValida && dadosSalvos.perfil === perfilSelecionado)) {
       alert("Senha incorreta ou perfil de acesso inválido.");
+      return;
+    }
+
+    if (perfilSelecionado === 'aluno') {
+      if (dadosSalvos.turma && dadosSalvos.turma !== turma) {
+        alert(`Esta conta está vinculada à turma ${turmaEmTexto(dadosSalvos.turma)}.`);
+        return;
+      }
+      // Contas de alunos antigas recebem a turma no primeiro login após a atualização.
+      if (!dadosSalvos.turma) {
+        dadosSalvos.turma = turma;
+        localStorage.setItem('user_' + user, JSON.stringify(dadosSalvos));
+      }
+    }
+
+    usuarioLogado = user;
+    registrarUsuario({
+      email: user,
+      perfil: dadosSalvos.perfil,
+      turma: dadosSalvos.turma
+    });
+    document.getElementById('secao-auth').classList.add('hidden');
+
+    if (perfilSelecionado === 'aluno') {
+      entrarMenuAluno();
+    } else if (perfilSelecionado === 'professor') {
+      entrarMenuProfessor();
+    } else if (perfilSelecionado === 'diretor') {
+      entrarMenuDiretor();
+    } else {
+      entrarMenuProgramador();
     }
   }
 }
@@ -355,6 +419,7 @@ function fazerLogout() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-auth').classList.remove('hidden');
   document.getElementById('usuario').value = '';
+  document.getElementById('turma-aluno').value = '';
   document.getElementById('senha').value = '';
 }
 
@@ -485,10 +550,12 @@ function registrarUsuario(dadosUsuario) {
   const existente = usuarios.find(usuario => usuario.email === email);
   if (existente) {
     existente.perfil = dadosUsuario.perfil;
+    if (dadosUsuario.turma) existente.turma = dadosUsuario.turma;
   } else {
     usuarios.push({
       email,
       perfil: dadosUsuario.perfil,
+      ...(dadosUsuario.turma ? { turma: dadosUsuario.turma } : {}),
       cadastradoEm: new Date().toISOString()
     });
   }
@@ -559,14 +626,43 @@ function irParaGerenciarAlunos() {
     return;
   }
 
-  usuarios.sort((a, b) => a.email.localeCompare(b.email)).forEach(usuario => {
-    const div = document.createElement('div');
-    div.className = 'item-lista';
-    const icones = { aluno: '🧑‍🎓', professor: '👨‍🏫', diretor: '🏫', programador: '💻' };
-    div.innerHTML = `${icones[usuario.perfil] || '👤'} <b>${escapeHtml(usuario.email)}</b>
-      <span class="perfil-tag">${perfilEmTexto(usuario.perfil)}</span>`;
-    container.appendChild(div);
+  const grupos = new Map();
+  usuarios.forEach(usuario => {
+    const chave = usuario.perfil === 'aluno' ? (usuario.turma || 'sem-turma') : 'equipe';
+    if (!grupos.has(chave)) grupos.set(chave, []);
+    grupos.get(chave).push(usuario);
   });
+
+  const ordemGrupos = [...grupos.keys()].sort((a, b) => {
+    if (a === 'equipe') return 1;
+    if (b === 'equipe') return -1;
+    const turmaA = turmasDisponiveis.findIndex(opcao => opcao.valor === a);
+    const turmaB = turmasDisponiveis.findIndex(opcao => opcao.valor === b);
+    return (turmaA === -1 ? 999 : turmaA) - (turmaB === -1 ? 999 : turmaB)
+      || a.localeCompare(b);
+  });
+  const icones = { aluno: '🧑‍🎓', professor: '👨‍🏫', diretor: '🏫', programador: '💻' };
+
+  container.innerHTML = ordemGrupos.map(chave => {
+    const grupo = grupos.get(chave).sort((a, b) => a.email.localeCompare(b.email));
+    const nomeGrupo = chave === 'equipe'
+      ? 'Equipe da plataforma'
+      : turmaEmTexto(chave);
+    return `
+      <div class="grupo-usuarios">
+        <div class="grupo-usuarios-titulo">
+          <b>${escapeHtml(nomeGrupo)}</b>
+          <span>${grupo.length} conta(s)</span>
+        </div>
+        ${grupo.map(usuario => `
+          <div class="item-lista">
+            ${icones[usuario.perfil] || '👤'} <b>${escapeHtml(usuario.email)}</b>
+            <span class="perfil-tag">${perfilEmTexto(usuario.perfil)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
 }
 
 function atualizarBancoAlunosLocal(novoAluno) {
@@ -596,35 +692,70 @@ function irParaAtribuirAtividade() {
 
 function renderizarSeletorAlunosAtividade() {
   const container = document.getElementById('seletor-alunos-atividade');
-  const alunos = obterAlunosDisponiveis();
+  const alunos = obterAlunosComTurma();
   if (!alunos.length) {
     container.innerHTML = '<div class="seletor-vazio">Nenhum aluno cadastrado. Cadastre alunos antes de agendar uma atividade.</div>';
     return;
   }
 
-  container.innerHTML = alunos.map((email, index) => `
-    <label class="checkbox-opcao aluno-opcao" for="aluno-atividade-${index}">
-      <input type="checkbox" id="aluno-atividade-${index}" value="${escapeHtml(email)}" onchange="atualizarEstadoSelecionarTodos()">
-      <span>${escapeHtml(email)}</span>
-    </label>
+  const grupos = new Map();
+  alunos.forEach(aluno => {
+    const chave = aluno.turma || 'sem-turma';
+    if (!grupos.has(chave)) grupos.set(chave, []);
+    grupos.get(chave).push(aluno);
+  });
+
+  container.innerHTML = [...grupos.entries()].map(([turma, estudantes], grupoIndex) => `
+    <div class="grupo-turma" data-turma="${escapeHtml(turma)}">
+      <div class="grupo-turma-header">
+        <span><b>${escapeHtml(turmaEmTexto(turma))}</b><small>${estudantes.length} aluno(s)</small></span>
+        <label class="checkbox-opcao checkbox-sala">
+          <input type="checkbox" onchange="selecionarTurmaAtividade('${escapeHtml(turma)}', this.checked)">
+          <span>Selecionar sala</span>
+        </label>
+      </div>
+      <div class="grupo-turma-alunos">
+        ${estudantes.map((aluno, alunoIndex) => `
+          <label class="checkbox-opcao aluno-opcao" for="aluno-atividade-${grupoIndex}-${alunoIndex}">
+            <input class="aluno-checkbox" type="checkbox" id="aluno-atividade-${grupoIndex}-${alunoIndex}" value="${escapeHtml(aluno.email)}" data-turma="${escapeHtml(turma)}" onchange="atualizarEstadoSelecionarTodos()">
+            <span>${escapeHtml(aluno.email)}</span>
+          </label>
+        `).join('')}
+      </div>
+    </div>
   `).join('');
 }
 
 function alternarTodosAlunosAtividade(selecionado) {
-  document.querySelectorAll('#seletor-alunos-atividade input[type="checkbox"]').forEach(input => {
+  document.querySelectorAll('#seletor-alunos-atividade .aluno-checkbox').forEach(input => {
+    input.checked = selecionado;
+  });
+  document.querySelectorAll('#seletor-alunos-atividade .checkbox-sala input').forEach(input => {
     input.checked = selecionado;
   });
 }
 
+function selecionarTurmaAtividade(turma, selecionado) {
+  document.querySelectorAll('#seletor-alunos-atividade .aluno-checkbox').forEach(input => {
+    if (input.dataset.turma === turma) input.checked = selecionado;
+  });
+  atualizarEstadoSelecionarTodos();
+}
+
 function atualizarEstadoSelecionarTodos() {
-  const caixas = [...document.querySelectorAll('#seletor-alunos-atividade input[type="checkbox"]')];
+  const caixas = [...document.querySelectorAll('#seletor-alunos-atividade .aluno-checkbox')];
   const todos = caixas.length > 0 && caixas.every(input => input.checked);
   const seletorTodos = document.getElementById('selecionar-todos-alunos');
   if (seletorTodos) seletorTodos.checked = todos;
+  document.querySelectorAll('#seletor-alunos-atividade .grupo-turma').forEach(grupo => {
+    const caixasDaSala = [...grupo.querySelectorAll('.aluno-checkbox')];
+    const seletorSala = grupo.querySelector('.checkbox-sala input');
+    if (seletorSala) seletorSala.checked = caixasDaSala.length > 0 && caixasDaSala.every(input => input.checked);
+  });
 }
 
 function obterAlunosSelecionadosAtividade() {
-  return [...document.querySelectorAll('#seletor-alunos-atividade input[type="checkbox"]:checked')]
+  return [...document.querySelectorAll('#seletor-alunos-atividade .aluno-checkbox:checked')]
     .map(input => input.value.toLowerCase());
 }
 
