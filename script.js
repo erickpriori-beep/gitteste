@@ -18,8 +18,29 @@ let bancoAtividadesCustomizadas = [];
 // Armazena temporariamente as questões que o professor está montando no formulário (Máx 8)
 let questoesFormularioProfessor = [];
 
+function lerAtividadesSalvas() {
+  try {
+    const atividades = JSON.parse(localStorage.getItem('educa-atividades') || '[]');
+    return Array.isArray(atividades) ? atividades : [];
+  } catch (erro) {
+    console.warn('Não foi possível ler as atividades salvas.', erro);
+    return [];
+  }
+}
+
+function escapeHtml(valor) {
+  return String(valor ?? '').replace(/[&<>"']/g, caractere => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[caractere]));
+}
+
 // ── SISTEMA DE TEMAS ─────────────────────────────────────────────────
 function setTema(tema) {
+  if (!['escuro', 'claro', 'cinza'].includes(tema)) tema = 'escuro';
   document.documentElement.setAttribute('data-theme', tema);
   localStorage.setItem('educa-tema', tema);
 
@@ -67,13 +88,70 @@ const banco = {
       { conteudo: `<b>⚡ Segunda Lei de Newton</b><br><br>Fórmula: <b>F = m · a</b><br><br>Massa = <b>10 kg</b>, Aceleração = <b>3 m/s²</b><br><br><i>Qual a força resultante em Newtons (N)?</i>`, tipo: "numero", resposta: 30, tolerancia: 2 },
       { conteudo: `<b>⚡ Segunda Lei de Newton</b><br><br>Fórmula: <b>F = m · a</b><br><br>Força = <b>50 N</b>, Massa = <b>5 kg</b><br><br><i>Qual a aceleração em m/s²?</i>`, tipo: "numero", resposta: 10, tolerancia: 1 },
       { conteudo: `<b>⚡ Velocidade Média</b><br><br>Fórmula: <b>v = Δs / Δt</b><br><br>Distância = <b>150 m</b>, Tempo = <b>30 s</b><br><br><i>Qual a velocidade média em m/s?</i>`, tipo: "numero", resposta: 5, tolerancia: 0.5 },
+      { conteudo: `<b>⚡ Peso de um corpo</b><br><br>Use <b>P = m · g</b>, considerando g = 10 m/s².<br><br>Massa = <b>6 kg</b><br><br><i>Qual é o peso em Newtons?</i>`, tipo: "numero", resposta: 60, tolerancia: 2 },
     ],
-    intermediario: [],
-    avancado: []
+    intermediario: [
+      { conteudo: `<b>⚡ Movimento Uniformemente Variado</b><br><br>Um carro parte do repouso com aceleração de <b>4 m/s²</b> durante <b>5 s</b>.<br><br><i>Qual será sua velocidade final em m/s?</i>`, tipo: "numero", resposta: 20, tolerancia: 1 },
+      { conteudo: `<b>⚡ Energia Cinética</b><br><br>Use <b>Eₖ = m · v² / 2</b>.<br><br>Massa = <b>2 kg</b> e velocidade = <b>6 m/s</b>.<br><br><i>Qual é a energia cinética em joules?</i>`, tipo: "numero", resposta: 36, tolerancia: 1 },
+      { conteudo: `<b>⚡ Lei de Ohm</b><br><br>Use <b>U = R · i</b>.<br><br>Resistência = <b>10 Ω</b> e corrente = <b>2 A</b>.<br><br><i>Qual é a tensão em volts?</i>`, tipo: "numero", resposta: 20, tolerancia: 1 },
+    ],
+    avancado: [
+      { conteudo: `<b>⚡ Trabalho de uma força</b><br><br>Uma força constante de <b>50 N</b> desloca um objeto por <b>8 m</b> na mesma direção.<br><br><i>Qual é o trabalho realizado em joules?</i>`, tipo: "numero", resposta: 400, tolerancia: 5 },
+      { conteudo: `<b>⚡ Potência média</b><br><br>Uma máquina realiza <b>1.200 J</b> de trabalho em <b>20 s</b>.<br><br><i>Qual é a potência média em watts?</i>`, tipo: "numero", resposta: 60, tolerancia: 2 },
+      { conteudo: `<b>⚡ Quantidade de movimento</b><br><br>Use <b>Q = m · v</b>.<br><br>Massa = <b>4 kg</b> e velocidade = <b>15 m/s</b>.<br><br><i>Qual é a quantidade de movimento?</i>`, tipo: "numero", resposta: 60, tolerancia: 2 },
+    ]
   },
-  quimica: { iniciante: [], intermediario: [], avancado: [] },
-  historia: { iniciante: [], intermediario: [], avancado: [] },
-  biologia: { iniciante: [], intermediario: [], avancado: [] }
+  quimica: {
+    iniciante: [
+      { conteudo: `<b>🧪 Estados físicos</b><br><br><i>Qual é o estado físico da água quando está em forma de gelo?</i>`, tipo: "palavra", resposta: "sólido", sinonimos: ["solido"] },
+      { conteudo: `<b>🧪 Tabela periódica</b><br><br><i>Qual é o símbolo químico do oxigênio?</i>`, tipo: "palavra", resposta: "O" },
+      { conteudo: `<b>🧪 Substâncias</b><br><br><i>Qual é a fórmula química da água?</i>`, tipo: "palavra", resposta: "H2O", sinonimos: ["h₂o", "h20"] },
+    ],
+    intermediario: [
+      { conteudo: `<b>🧪 pH</b><br><br>Uma solução com pH menor que 7 é classificada como o quê?<br><br><i>Responda com uma palavra.</i>`, tipo: "palavra", resposta: "ácida", sinonimos: ["acida", "ácido", "acido"] },
+      { conteudo: `<b>🧪 Balanceamento</b><br><br>Na reação <b>2H₂ + O₂ → 2H₂O</b>, qual é o coeficiente do O₂?<br><br><i>Digite o número.</i>`, tipo: "numero", resposta: 1, tolerancia: 0 },
+      { conteudo: `<b>🧪 Ligações químicas</b><br><br><i>Como se chama a ligação formada pela transferência de elétrons entre átomos?</i>`, tipo: "palavra", resposta: "iônica", sinonimos: ["ionica", "iónica", "ionica"] },
+    ],
+    avancado: [
+      { conteudo: `<b>🧪 Estequiometria</b><br><br>Quantos mols existem em <b>36 g de H₂O</b>? Considere massa molar de 18 g/mol.<br><br><i>Digite o resultado.</i>`, tipo: "numero", resposta: 2, tolerancia: 0.1 },
+      { conteudo: `<b>🧪 Oxirredução</b><br><br><i>Como se chama a espécie química que recebe elétrons em uma reação?</i>`, tipo: "palavra", resposta: "agente oxidante", sinonimos: ["oxidante"] },
+      { conteudo: `<b>🧪 Termoquímica</b><br><br>Uma reação que libera calor para o ambiente é classificada como quê?<br><br><i>Responda com uma palavra.</i>`, tipo: "palavra", resposta: "exotérmica", sinonimos: ["exotermica"] },
+    ]
+  },
+  historia: {
+    iniciante: [
+      { conteudo: `<b>📜 Brasil Colonial</b><br><br><i>Qual país colonizou o Brasil?</i>`, tipo: "palavra", resposta: "Portugal", sinonimos: ["portugueses", "portugues"] },
+      { conteudo: `<b>📜 Antiguidade</b><br><br><i>Qual povo construiu as pirâmides de Gizé?</i>`, tipo: "palavra", resposta: "egípcios", sinonimos: ["egipcios", "egito"] },
+      { conteudo: `<b>📜 Independência</b><br><br>Em que ano o Brasil declarou sua independência?<br><br><i>Digite o ano.</i>`, tipo: "numero", resposta: 1822, tolerancia: 0 },
+    ],
+    intermediario: [
+      { conteudo: `<b>📜 Revolução Francesa</b><br><br><i>Em que ano começou a Revolução Francesa?</i>`, tipo: "numero", resposta: 1789, tolerancia: 0 },
+      { conteudo: `<b>📜 Brasil Império</b><br><br><i>Qual foi o nome do primeiro imperador do Brasil?</i>`, tipo: "palavra", resposta: "Dom Pedro I", sinonimos: ["d pedro i", "pedro i"] },
+      { conteudo: `<b>📜 Guerra Fria</b><br><br><i>Quais eram as duas principais potências da Guerra Fria?</i><br><br>Responda com os nomes separados por “e”.`, tipo: "palavra", resposta: "Estados Unidos e União Soviética", sinonimos: ["eua e uniao sovietica", "estados unidos e urss", "eua e urss"] },
+    ],
+    avancado: [
+      { conteudo: `<b>📜 Primeira Guerra Mundial</b><br><br><i>Em que ano terminou a Primeira Guerra Mundial?</i>`, tipo: "numero", resposta: 1918, tolerancia: 0 },
+      { conteudo: `<b>📜 República Velha</b><br><br><i>Como ficou conhecida a política de alternância de poder entre São Paulo e Minas Gerais?</i>`, tipo: "palavra", resposta: "política do café com leite", sinonimos: ["politica do cafe com leite", "cafe com leite"] },
+      { conteudo: `<b>📜 Ditadura Militar</b><br><br><i>Em que ano foi promulgada a Constituição brasileira atualmente vigente?</i>`, tipo: "numero", resposta: 1988, tolerancia: 0 },
+    ]
+  },
+  biologia: {
+    iniciante: [
+      { conteudo: `<b>🌿 Citologia</b><br><br><i>Qual é a unidade básica dos seres vivos?</i>`, tipo: "palavra", resposta: "célula", sinonimos: ["celula"] },
+      { conteudo: `<b>🌿 Corpo humano</b><br><br><i>Qual órgão é responsável por bombear o sangue?</i>`, tipo: "palavra", resposta: "coração", sinonimos: ["coracao"] },
+      { conteudo: `<b>🌿 Fotossíntese</b><br><br><i>Qual gás as plantas absorvem durante a fotossíntese?</i>`, tipo: "palavra", resposta: "gás carbônico", sinonimos: ["gas carbonico", "dióxido de carbono", "dioxido de carbono", "co2"] },
+    ],
+    intermediario: [
+      { conteudo: `<b>🌿 Genética</b><br><br><i>Qual molécula armazena a informação genética dos seres vivos?</i>`, tipo: "palavra", resposta: "DNA", sinonimos: ["adn"] },
+      { conteudo: `<b>🌿 Divisão celular</b><br><br><i>Como se chama a divisão celular que origina duas células geneticamente idênticas?</i>`, tipo: "palavra", resposta: "mitose" },
+      { conteudo: `<b>🌿 Ecologia</b><br><br><i>Como se chama o conjunto de seres vivos e fatores não vivos de uma região?</i>`, tipo: "palavra", resposta: "ecossistema", sinonimos: ["ecosistema"] },
+    ],
+    avancado: [
+      { conteudo: `<b>🌿 Genética mendeliana</b><br><br>No cruzamento Aa × Aa, qual a probabilidade de nascer um descendente aa?<br><br><i>Responda em porcentagem.</i>`, tipo: "numero", resposta: 25, tolerancia: 1 },
+      { conteudo: `<b>🌿 Evolução</b><br><br><i>Qual cientista é associado à teoria da seleção natural?</i>`, tipo: "palavra", resposta: "Charles Darwin", sinonimos: ["darwin"] },
+      { conteudo: `<b>🌿 Fisiologia</b><br><br><i>Qual hormônio reduz a concentração de glicose no sangue?</i>`, tipo: "palavra", resposta: "insulina" },
+    ]
+  }
 };
 
 // ── FLUXO DE LOGIN E PERFIL ──────────────────────────────────────────
@@ -286,6 +364,13 @@ function salvarAtividadeProfessor() {
   const titulo = document.getElementById('titulo-nova-atividade').value.trim();
   if (!titulo) { alert("Dê um título para a sua atividade."); return; }
   if (questoesFormularioProfessor.length === 0) { alert("Adicione pelo menos 1 questão."); return; }
+  const formularioIncompleto = questoesFormularioProfessor.some(q =>
+    !q.enunciado.trim() || !q.a.trim() || !q.b.trim() || !q.c.trim() || !q.d.trim()
+  );
+  if (formularioIncompleto) {
+    alert("Preencha o enunciado e as quatro alternativas de todas as questões.");
+    return;
+  }
 
   // Estrutura a atividade customizada para envio
   const novaAtividade = {
@@ -294,7 +379,7 @@ function salvarAtividadeProfessor() {
     criador: usuarioLogado,
     questoes: questoesFormularioProfessor.map(q => {
       return {
-        conteudo: `<b>📝 Atividade: ${titulo}</b><br><br>${q.enunciado}<br><br><b>A)</b> ${q.a}<br><b>B)</b> ${q.b}<br><b>C)</b> ${q.c}<br><b>D)</b> ${q.d}`,
+        conteudo: `<b>📝 Atividade: ${escapeHtml(titulo)}</b><br><br>${escapeHtml(q.enunciado)}<br><br><b>A)</b> ${escapeHtml(q.a)}<br><b>B)</b> ${escapeHtml(q.b)}<br><b>C)</b> ${escapeHtml(q.c)}<br><b>D)</b> ${escapeHtml(q.d)}`,
         tipo: "palavra",
         resposta: q.correta.toLowerCase(),
         sinonimos: [q.correta.toLowerCase(), q.correta.toUpperCase()]
@@ -303,7 +388,7 @@ function salvarAtividadeProfessor() {
     statusAlunos: {} // Controla quem já fez
   };
 
-  let atividadesSalvas = JSON.parse(localStorage.getItem('educa-atividades') || '[]');
+  let atividadesSalvas = lerAtividadesSalvas();
   atividadesSalvas.push(novaAtividade);
   localStorage.setItem('educa-atividades', JSON.stringify(atividadesSalvas));
 
@@ -319,12 +404,12 @@ function irParaAtividadesAluno() {
 }
 
 function mudarAbaAluno(aba) {
+  const abasValidas = ['recentes', 'pendentes', 'concluidas'];
+  if (!abasValidas.includes(aba)) aba = 'recentes';
   abaAtivaAluno = aba;
-  document.querySelectorAll('.aba-btn').forEach(btn => btn.classList.remove('ativa'));
-
-  // Encontra o botão correspondente de forma segura
-  const abasMapeadas = { recentes: 0, pendentes: 1, concluidas: 2 };
-  document.querySelectorAll('.aba-btn')[abasMapeadas[aba]].classList.add('ativa');
+  document.querySelectorAll('.aba-btn').forEach(btn => {
+    btn.classList.toggle('ativa', btn.dataset.aba === aba);
+  });
 
   renderizarListaAtividadesAluno();
 }
@@ -333,11 +418,21 @@ function renderizarListaAtividadesAluno() {
   const container = document.getElementById('lista-atividades-container');
   container.innerHTML = '';
 
-  let atividadesSalvas = JSON.parse(localStorage.getItem('educa-atividades') || '[]');
+  let atividadesSalvas = lerAtividadesSalvas();
+  const totais = { recentes: atividadesSalvas.length, pendentes: 0, concluidas: 0 };
+  atividadesSalvas.forEach(act => {
+    const status = (act.statusAlunos || {})[usuarioLogado];
+    if (status === 'concluida') totais.concluidas++;
+    else totais.pendentes++;
+  });
+  Object.entries(totais).forEach(([nome, total]) => {
+    const contador = document.getElementById(`contador-${nome}`);
+    if (contador) contador.textContent = total;
+  });
 
   // Filtra as atividades com base na aba escolhida
   let filtradas = atividadesSalvas.filter(act => {
-    const status = act.statusAlunos[usuarioLogado];
+    const status = (act.statusAlunos || {})[usuarioLogado];
     if (abaAtivaAluno === 'concluidas') return status === 'concluida';
     if (abaAtivaAluno === 'pendentes') return status !== 'concluida';
     if (abaAtivaAluno === 'recentes') return true; // Mostra tudo enviado
@@ -350,13 +445,15 @@ function renderizarListaAtividadesAluno() {
   }
 
   filtradas.forEach(act => {
-    const status = act.statusAlunos[usuarioLogado] === 'concluida' ? '✅ Concluída' : '⏳ Pendente';
+    const statusAlunos = act.statusAlunos || {};
+    const concluida = statusAlunos[usuarioLogado] === 'concluida';
+    const status = concluida ? '✅ Concluída' : '⏳ Pendente';
     const div = document.createElement('div');
     div.className = 'item-lista';
     div.style.cursor = 'pointer';
-    div.innerHTML = `📋 <b>${act.titulo}</b> <small>(Por: ${act.criador})</small> <span style="float: right; font-size:0.8rem;">${status}</span>`;
+    div.innerHTML = `📋 <b>${escapeHtml(act.titulo)}</b> <small>(Por: ${escapeHtml(act.criador)})</small> <span style="float: right; font-size:0.8rem;">${status}</span>`;
 
-    if(act.statusAlunos[usuarioLogado] !== 'concluida') {
+    if(!concluida) {
       div.onclick = () => iniciarAtividadeProfessorPeloAluno(act);
     } else {
       div.onclick = () => alert("Você já completou esta atividade com êxito!");
@@ -385,7 +482,7 @@ function carregarAula() {
   materiaAtual = document.getElementById('materia').value;
   nivelAtual   = document.getElementById('nivel').value;
 
-  filaQuestoes = embaralhar(banco[materiaAtual][nivelAtual]);
+  filaQuestoes = embaralhar(banco[materiaAtual]?.[nivelAtual] || []);
   indiceAtual  = 0;
   acertos      = 0;
 
@@ -412,18 +509,31 @@ function atualizarTituloAula() {
 }
 
 function carregarQuestao() {
+  const input = document.getElementById('input-resposta');
+  const btnVerificar = document.getElementById('btn-verificar');
+  const btnProxima = document.getElementById('btn-proxima');
+
   if (filaQuestoes.length === 0) {
-    document.getElementById('conteudo-aula').innerHTML = "<b>Nenhuma questão cadastrada nesta categoria ainda.</b>";
+    questaoAtual = null;
+    document.getElementById('conteudo-aula').innerHTML = `
+      <b>🚧 Nenhuma questão disponível nesta categoria.</b>
+      <br><br><span>Escolha outra matéria ou nível para continuar seu treino.</span>
+    `;
+    input.value = '';
+    input.disabled = true;
+    btnVerificar.disabled = true;
+    btnProxima.classList.add('hidden');
+    limparFeedback();
     return;
   }
   questaoAtual = filaQuestoes[indiceAtual];
   jaAcertou    = false;
 
   document.getElementById('conteudo-aula').innerHTML = questaoAtual.conteudo;
-  document.getElementById('input-resposta').value = '';
-  document.getElementById('input-resposta').disabled = false;
-  document.getElementById('btn-verificar').disabled = false;
-  document.getElementById('btn-proxima').classList.add('hidden');
+  input.value = '';
+  input.disabled = false;
+  btnVerificar.disabled = false;
+  btnProxima.classList.add('hidden');
   limparFeedback();
   atualizarContador();
   document.getElementById('input-resposta').focus();
@@ -443,9 +553,10 @@ function proximaQuestao() {
   if (indiceAtual >= filaQuestoes.length) {
     if (materiaAtual === 'custom') {
       // Finaliza a atividade customizada salvando o status no localStorage
-      let atividadesSalvas = JSON.parse(localStorage.getItem('educa-atividades') || '[]');
+      let atividadesSalvas = lerAtividadesSalvas();
       let index = atividadesSalvas.findIndex(act => act.id === nivelAtual);
       if (index !== -1) {
+        atividadesSalvas[index].statusAlunos ||= {};
         atividadesSalvas[index].statusAlunos[usuarioLogado] = 'concluida';
         localStorage.setItem('educa-atividades', JSON.stringify(atividadesSalvas));
       }
@@ -502,7 +613,7 @@ function avaliarResposta(input, questao) {
     const diff = Math.abs(val - questao.resposta);
     const tol  = questao.tolerancia;
     if (diff === 0 || (tol === 0 && diff === 0)) return { tipo: 'correto', mensagem: '✅ Resposta correta! Excelente!' };
-    if (tol > 0 && diff <= tol)      return { tipo: 'correto', margin: '✅ Resposta correta! Excelente!' };
+     if (tol > 0 && diff <= tol)      return { tipo: 'correto', mensagem: '✅ Resposta correta! Excelente!' };
     if (tol > 0 && diff <= tol * 2)  return { tipo: 'proximo',  mensagem: `🔥 Muito perto! Você está a ${diff.toFixed(1)} da resposta certa.` };
     return { tipo: 'errado', mensagem: `❌ Incorreto. Tente novamente!` };
   }

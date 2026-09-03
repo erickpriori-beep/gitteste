@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>educa+ — Plataforma de Estudo</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -46,16 +47,17 @@
 
             <div class="divider"></div>
 
-            <div class="campo">
-                <label>Usuário</label>
-                <input type="text" id="usuario" placeholder="Ex: ze_gamer" autocomplete="username">
-            </div>
-            <div class="campo">
-                <label>Senha</label>
-                <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password"
-                       onkeydown="if(event.key==='Enter') autenticar()">
-            </div>
-            <button onclick="autenticar()" id="btn-auth">Entrar na conta</button>
+            <form id="auth-form" onsubmit="event.preventDefault(); autenticar()">
+                <div class="campo">
+                    <label for="usuario">Usuário</label>
+                    <input type="text" id="usuario" placeholder="Ex: ze_gamer" autocomplete="username">
+                </div>
+                <div class="campo">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+                </div>
+                <button type="submit" id="btn-auth">Entrar na conta</button>
+            </form>
             
             <div class="opcoes-nav">
                 <span id="msg-troca">Não tem conta? <a onclick="alternarTela(false)">Registre-se grátis</a></span>
@@ -115,9 +117,9 @@
             <h2>Minhas Atividades</h2>
             
             <div class="abas-container">
-                <button class="aba-btn ativa" onclick="mudarAbaAluno('recentes')">Recém-atribuídas</button>
-                <button class="aba-btn" onclick="mudarAbaAluno('pendentes')">Pendentes</button>
-                <button class="aba-btn" onclick="mudarAbaAluno('concluidas')">Concluídas</button>
+                <button class="aba-btn ativa" data-aba="recentes" onclick="mudarAbaAluno('recentes')">Recém-atribuídas <span id="contador-recentes" class="aba-contador">0</span></button>
+                <button class="aba-btn" data-aba="pendentes" onclick="mudarAbaAluno('pendentes')">Pendentes <span id="contador-pendentes" class="aba-contador">0</span></button>
+                <button class="aba-btn" data-aba="concluidas" onclick="mudarAbaAluno('concluidas')">Concluídas <span id="contador-concluidas" class="aba-contador">0</span></button>
             </div>
 
             <div id="lista-atividades-container" class="lista-atividades">
