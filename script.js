@@ -253,38 +253,51 @@ async function autenticar() {
     alternarTela(true);
   } else {
     const dadosSalvosRaw = localStorage.getItem('user_' + user);
+    let dadosSalvos = null;
     if (dadosSalvosRaw) {
-      let dadosSalvos;
       try {
         dadosSalvos = JSON.parse(dadosSalvosRaw);
       } catch (erro) {
         alert("Não foi possível ler esta conta. Faça um novo cadastro.");
         return;
       }
+    }
 
-      const senhaValida = perfilAdministrativo
-        ? await validarAcessoAdministrativo(perfilSelecionado, pass)
-        : dadosSalvos.senha === pass;
+    // Diretor e Programador usam a senha secreta do servidor como credencial.
+    // O e-mail é registrado automaticamente no primeiro login válido.
+    if (perfilAdministrativo) {
+      if (!(await validarAcessoAdministrativo(perfilSelecionado, pass))) return;
+      if (dadosSalvos && dadosSalvos.perfil !== perfilSelecionado) {
+        alert("Este e-mail já está vinculado a outro perfil.");
+        return;
+      }
+      if (!dadosSalvos) {
+        dadosSalvos = { email: user, perfil: perfilSelecionado, protegido: true };
+        localStorage.setItem('user_' + user, JSON.stringify(dadosSalvos));
+      }
+    } else if (!dadosSalvos) {
+      alert("E-mail não encontrado. Faça seu cadastro primeiro.");
+      return;
+    }
 
-      if (senhaValida && dadosSalvos.perfil === perfilSelecionado) {
-        usuarioLogado = user;
-        registrarUsuario({ email: user, perfil: dadosSalvos.perfil });
-        document.getElementById('secao-auth').classList.add('hidden');
+    const senhaValida = perfilAdministrativo || dadosSalvos.senha === pass;
 
-        if (perfilSelecionado === 'aluno') {
-          entrarMenuAluno();
-        } else if (perfilSelecionado === 'professor') {
-          entrarMenuProfessor();
-        } else if (perfilSelecionado === 'diretor') {
-          entrarMenuDiretor();
-        } else {
-          entrarMenuProgramador();
-        }
+    if (senhaValida && dadosSalvos.perfil === perfilSelecionado) {
+      usuarioLogado = user;
+      registrarUsuario({ email: user, perfil: dadosSalvos.perfil });
+      document.getElementById('secao-auth').classList.add('hidden');
+
+      if (perfilSelecionado === 'aluno') {
+        entrarMenuAluno();
+      } else if (perfilSelecionado === 'professor') {
+        entrarMenuProfessor();
+      } else if (perfilSelecionado === 'diretor') {
+        entrarMenuDiretor();
       } else {
-        alert("Senha incorreta ou perfil de acesso inválido.");
+        entrarMenuProgramador();
       }
     } else {
-      alert("Usuário não encontrado.");
+      alert("Senha incorreta ou perfil de acesso inválido.");
     }
   }
 }
@@ -298,28 +311,61 @@ function fazerLogout() {
 }
 
 // ── INTERFACES DOS MENUS ─────────────────────────────────────────────
+function definirTexto(id, valor) {
+  const elemento = document.getElementById(id);
+  if (elemento) elemento.innerText = String(valor);
+}
+
+function atualizarEstatisticasMenus() {
+  const usuarios = lerUsuariosSalvos();
+  const atividades = lerAtividadesSalvas();
+  const alunos = usuarios.filter(usuario => usuario.perfil === 'aluno').length;
+  const professores = usuarios.filter(usuario => usuario.perfil === 'professor').length;
+  const atividadesDoAluno = usuarioLogado
+    ? atividades.filter(atividade => atividade.statusAlunos?.[usuarioLogado] !== 'concluida')
+    : [];
+
+  definirTexto('aluno-total-atividades', usuarioLogado
+    ? atividades.filter(atividade => atividade.statusAlunos?.[usuarioLogado] !== undefined).length
+    : 0);
+  definirTexto('aluno-pendentes', atividadesDoAluno.length);
+  definirTexto('professor-total-alunos', alunos);
+  definirTexto('professor-total-atividades', atividades.length);
+  definirTexto('diretor-total-alunos', alunos);
+  definirTexto('diretor-total-professores', professores);
+  definirTexto('diretor-total-atividades', atividades.length);
+  definirTexto('programador-total-contas', usuarios.length);
+  definirTexto('programador-total-atividades', atividades.length);
+}
+
 function entrarMenuAluno() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-menu-aluno').classList.remove('hidden');
-  document.getElementById('boas-vindas-aluno').innerText = `👋 Olá, ${usuarioLogado}!`;
+  const nome = usuarioLogado.split('@')[0];
+  definirTexto('nome-curto-aluno', nome);
+  document.getElementById('boas-vindas-aluno').innerText = 'Continue evoluindo no seu ritmo.';
+  atualizarEstatisticasMenus();
 }
 
 function entrarMenuProfessor() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-menu-professor').classList.remove('hidden');
-  document.getElementById('boas-vindas-professor').innerText = `👨‍🏫 Mestre ${usuarioLogado}`;
+  document.getElementById('boas-vindas-professor').innerText = `Conta ativa: ${usuarioLogado}`;
+  atualizarEstatisticasMenus();
 }
 
 function entrarMenuDiretor() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-menu-diretor').classList.remove('hidden');
-  document.getElementById('boas-vindas-diretor').innerText = `👋 Olá, Diretor(a) ${usuarioLogado}`;
+  document.getElementById('boas-vindas-diretor').innerText = `Conta ativa: ${usuarioLogado}`;
+  atualizarEstatisticasMenus();
 }
 
 function entrarMenuProgramador() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-menu-programador').classList.remove('hidden');
-  document.getElementById('boas-vindas-programador').innerText = `💻 Olá, ${usuarioLogado}`;
+  document.getElementById('boas-vindas-programador').innerText = `Conta ativa: ${usuarioLogado}`;
+  atualizarEstatisticasMenus();
 }
 
 function irParaTreino() {

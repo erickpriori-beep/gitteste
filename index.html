@@ -75,15 +75,35 @@
         </div>
 
         <div id="secao-menu-aluno" class="hidden">
-            <div class="logo-badge">
-                <div class="logo-icon">🧑‍🎓</div>
-                <span class="logo-text">educa+ Aluno</span>
+            <div class="menu-head">
+                <div class="logo-badge">
+                    <div class="logo-icon">🧑‍🎓</div>
+                    <span class="logo-text">educa+ Aluno</span>
+                </div>
+                <span class="perfil-pill">Área do aluno</span>
             </div>
-            <span id="boas-vindas-aluno" class="badge-boasvindas"></span>
-            
+            <div class="menu-welcome">
+                <span class="menu-eyebrow">SEU ESPAÇO DE APRENDIZADO</span>
+                <h1>Olá, <span id="nome-curto-aluno">estudante</span>!</h1>
+                <p id="boas-vindas-aluno">Continue evoluindo no seu ritmo.</p>
+            </div>
+            <div class="menu-stats">
+                <div class="menu-stat"><strong id="aluno-total-atividades">0</strong><span>atividades</span></div>
+                <div class="menu-stat"><strong id="aluno-pendentes">0</strong><span>pendentes</span></div>
+                <div class="menu-stat"><strong>5</strong><span>matérias</span></div>
+            </div>
+            <h3 class="menu-actions-title">O que você quer fazer?</h3>
             <div class="menu-grid">
-                <button class="btn-menu-opcao" onclick="irParaTreino()">🏋️ Treino Livre</button>
-                <button class="btn-menu-opcao" onclick="irParaAtividadesAluno()">📝 Ver Atividades</button>
+                <button class="btn-menu-opcao" onclick="irParaTreino()">
+                    <span class="menu-action-icon">🏋️</span>
+                    <span class="menu-action-copy"><b>Treino Livre</b><small>Pratique com questões por matéria e nível</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaAtividadesAluno()">
+                    <span class="menu-action-icon">📝</span>
+                    <span class="menu-action-copy"><b>Minhas Atividades</b><small>Veja tarefas recentes e pendentes</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
             </div>
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
@@ -131,44 +151,108 @@
         </div>
 
         <div id="secao-menu-professor" class="hidden">
-            <div class="logo-badge">
-                <div class="logo-icon">👨‍🏫</div>
-                <span class="logo-text">educa+ Pro</span>
+            <div class="menu-head">
+                <div class="logo-badge">
+                    <div class="logo-icon">👨‍🏫</div>
+                    <span class="logo-text">educa+ Pro</span>
+                </div>
+                <span class="perfil-pill">Área do professor</span>
             </div>
-            <span id="boas-vindas-professor" class="badge-boasvindas"></span>
-            
+            <div class="menu-welcome">
+                <span class="menu-eyebrow">CENTRAL DO EDUCADOR</span>
+                <h1>Bem-vindo, professor!</h1>
+                <p id="boas-vindas-professor">Organize sua turma e acompanhe o aprendizado.</p>
+            </div>
+            <div class="menu-stats">
+                <div class="menu-stat"><strong id="professor-total-alunos">0</strong><span>alunos</span></div>
+                <div class="menu-stat"><strong id="professor-total-atividades">0</strong><span>atividades</span></div>
+                <div class="menu-stat"><strong>8</strong><span>questões/atividade</span></div>
+            </div>
+            <h3 class="menu-actions-title">Ferramentas da turma</h3>
             <div class="menu-grid">
-                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">👥 Gerenciar Alunos</button>
-                <button class="btn-menu-opcao" onclick="irParaAtribuirAtividade()">➕ Atribuir Atividade</button>
+                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">
+                    <span class="menu-action-icon">👥</span>
+                    <span class="menu-action-copy"><b>Gerenciar Alunos</b><small>Consulte as contas cadastradas</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaAtribuirAtividade()">
+                    <span class="menu-action-icon">➕</span>
+                    <span class="menu-action-copy"><b>Atribuir Atividade</b><small>Crie e publique novas questões</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
             </div>
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
 
         <div id="secao-menu-diretor" class="hidden">
-            <div class="logo-badge">
-                <div class="logo-icon">🏫</div>
-                <span class="logo-text">educa+ Direção</span>
+            <div class="menu-head">
+                <div class="logo-badge">
+                    <div class="logo-icon">🏫</div>
+                    <span class="logo-text">educa+ Direção</span>
+                </div>
+                <span class="perfil-pill">Gestão escolar</span>
             </div>
-            <span id="boas-vindas-diretor" class="badge-boasvindas"></span>
-
+            <div class="menu-welcome">
+                <span class="menu-eyebrow">PAINEL ADMINISTRATIVO</span>
+                <h1>Visão da escola</h1>
+                <p id="boas-vindas-diretor">Decisões melhores começam com bons dados.</p>
+            </div>
+            <div class="menu-stats">
+                <div class="menu-stat"><strong id="diretor-total-alunos">0</strong><span>alunos</span></div>
+                <div class="menu-stat"><strong id="diretor-total-professores">0</strong><span>professores</span></div>
+                <div class="menu-stat"><strong id="diretor-total-atividades">0</strong><span>atividades</span></div>
+            </div>
+            <h3 class="menu-actions-title">Gestão rápida</h3>
             <div class="menu-grid">
-                <button class="btn-menu-opcao" onclick="irParaPainelDiretor()">📊 Visão geral da escola</button>
-                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">👥 Usuários cadastrados</button>
-                <button class="btn-menu-opcao" onclick="irParaAtribuirAtividade()">➕ Criar atividade</button>
+                <button class="btn-menu-opcao" onclick="irParaPainelDiretor()">
+                    <span class="menu-action-icon">📊</span>
+                    <span class="menu-action-copy"><b>Visão geral da escola</b><small>Acompanhe os principais indicadores</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">
+                    <span class="menu-action-icon">👥</span>
+                    <span class="menu-action-copy"><b>Usuários cadastrados</b><small>Consulte alunos e equipe</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaAtribuirAtividade()">
+                    <span class="menu-action-icon">➕</span>
+                    <span class="menu-action-copy"><b>Criar atividade</b><small>Publique uma atividade para os alunos</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
             </div>
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
 
         <div id="secao-menu-programador" class="hidden">
-            <div class="logo-badge">
-                <div class="logo-icon">💻</div>
-                <span class="logo-text">educa+ Tech</span>
+            <div class="menu-head">
+                <div class="logo-badge">
+                    <div class="logo-icon">💻</div>
+                    <span class="logo-text">educa+ Tech</span>
+                </div>
+                <span class="perfil-pill">Área técnica</span>
             </div>
-            <span id="boas-vindas-programador" class="badge-boasvindas"></span>
-
+            <div class="menu-welcome">
+                <span class="menu-eyebrow">CONTROLE DA PLATAFORMA</span>
+                <h1>Painel técnico</h1>
+                <p id="boas-vindas-programador">Monitore a operação do educa+ com segurança.</p>
+            </div>
+            <div class="menu-stats">
+                <div class="menu-stat"><strong id="programador-total-contas">0</strong><span>contas</span></div>
+                <div class="menu-stat"><strong id="programador-total-atividades">0</strong><span>atividades</span></div>
+                <div class="menu-stat"><strong class="status-ok">●</strong><span>sistema online</span></div>
+            </div>
+            <h3 class="menu-actions-title">Ferramentas técnicas</h3>
             <div class="menu-grid">
-                <button class="btn-menu-opcao" onclick="irParaPainelProgramador()">🛠️ Painel do sistema</button>
-                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">👥 Ver usuários cadastrados</button>
+                <button class="btn-menu-opcao" onclick="irParaPainelProgramador()">
+                    <span class="menu-action-icon">🛠️</span>
+                    <span class="menu-action-copy"><b>Painel do sistema</b><small>Confira o status e os registros locais</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaGerenciarAlunos()">
+                    <span class="menu-action-icon">👥</span>
+                    <span class="menu-action-copy"><b>Ver usuários cadastrados</b><small>Inspecione os perfis registrados</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
             </div>
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
