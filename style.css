@@ -673,6 +673,123 @@ html[data-theme="claro"] .btn-confirmar {
   box-shadow: 0 0 10px var(--success);
 }
 
+.painel-detalhes-programador {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.detalhe-bloco {
+  padding: 13px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.detalhe-bloco-titulo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.detalhe-bloco-titulo b {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+.detalhe-bloco-titulo small {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  text-align: right;
+}
+.info-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.info-chip {
+  padding: 4px 8px;
+  color: var(--text-muted);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.68rem;
+}
+.info-chip b {
+  margin-left: 3px;
+  color: var(--primary);
+}
+.info-lista {
+  max-height: 190px;
+  overflow-y: auto;
+}
+.info-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.73rem;
+}
+.info-linha span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.info-linha small {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+.info-atividade {
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+.info-atividade-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.info-atividade-topo b {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tech-status {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 600;
+}
+.tech-status.agendada {
+  color: var(--warning);
+  background: rgba(255, 184, 0, 0.1);
+}
+.tech-status.liberada {
+  color: var(--success);
+  background: rgba(0, 224, 150, 0.1);
+}
+.info-atividade-detalhes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 0.63rem;
+  line-height: 1.45;
+}
+.info-vazio {
+  padding: 8px 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
 /* ══════════════════════════════════════════════
    CARD DE QUESTÃO DO PROFESSOR
 ══════════════════════════════════════════════ */

@@ -283,6 +283,11 @@
                     <span class="menu-action-copy"><b>Ver usuários cadastrados</b><small>Inspecione os perfis registrados</small></span>
                     <span class="menu-action-arrow">→</span>
                 </button>
+                <button class="btn-menu-opcao" onclick="irParaAgendaAtividades()">
+                    <span class="menu-action-icon">🗓️</span>
+                    <span class="menu-action-copy"><b>Agenda completa</b><small>Consulte todos os lançamentos e destinatários</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
             </div>
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
@@ -298,11 +303,12 @@
 
         <div id="secao-painel-programador" class="hidden">
             <h2>Painel do sistema</h2>
-            <p>Informações técnicas do ambiente local</p>
+            <p>Visão completa das informações operacionais do educa+</p>
             <div id="resumo-programador" class="resumo-grid"></div>
+            <div id="detalhes-programador" class="painel-detalhes-programador"></div>
             <div class="status-sistema">
                 <span class="status-ponto"></span>
-                Armazenamento local conectado e pronto para uso
+                Armazenamento local conectado e pronto para uso · credenciais protegidas
             </div>
             <button onclick="voltarParaMenuProgramador()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
         </div>

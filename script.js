@@ -599,6 +599,84 @@ function irParaPainelProgramador() {
     <div class="resumo-card"><strong>${localStorage.length}</strong><span>Registros locais</span></div>
     <div class="resumo-card"><strong>OK</strong><span>Status</span></div>
   `;
+  renderizarDetalhesProgramador(usuarios, atividades);
+}
+
+function renderizarDetalhesProgramador(usuarios, atividades) {
+  const container = document.getElementById('detalhes-programador');
+  if (!container) return;
+
+  const perfis = Object.keys(nomesPerfis).map(perfil => ({
+    perfil,
+    total: usuarios.filter(usuario => usuario.perfil === perfil).length
+  }));
+  const salas = turmasDisponiveis
+    .map(turma => ({
+      ...turma,
+      total: usuarios.filter(usuario => usuario.perfil === 'aluno' && usuario.turma === turma.valor).length
+    }))
+    .filter(turma => turma.total > 0);
+  const alunosSemTurma = usuarios.filter(usuario =>
+    usuario.perfil === 'aluno' && !usuario.turma
+  ).length;
+
+  const contasHtml = usuarios.length
+    ? [...usuarios]
+      .sort((a, b) => a.email.localeCompare(b.email))
+      .map(usuario => `
+        <div class="info-linha">
+          <span>${escapeHtml(usuario.email)}</span>
+          <small>${perfilEmTexto(usuario.perfil)}${usuario.turma ? ` · ${turmaEmTexto(usuario.turma)}` : ''}</small>
+        </div>
+      `).join('')
+    : '<div class="info-vazio">Nenhuma conta registrada.</div>';
+
+  const atividadesHtml = atividades.length
+    ? [...atividades]
+      .sort((a, b) => new Date(a.publicadaEm || 0) - new Date(b.publicadaEm || 0))
+      .map(atividade => {
+        const liberada = atividadeFoiLiberada(atividade);
+        const destinatarios = Array.isArray(atividade.alunosSelecionados)
+          ? atividade.alunosSelecionados.map(email => escapeHtml(email)).join(', ')
+          : 'Todos os alunos';
+        const conclusoes = Object.values(atividade.statusAlunos || {})
+          .filter(status => status === 'concluida').length;
+        return `
+          <div class="info-atividade">
+            <div class="info-atividade-topo">
+              <b>📋 ${escapeHtml(atividade.titulo)}</b>
+              <span class="tech-status ${liberada ? 'liberada' : 'agendada'}">${liberada ? 'Lançada' : 'Agendada'}</span>
+            </div>
+            <div class="info-atividade-detalhes">
+              <span>✍️ ${escapeHtml(atividade.criador || 'não informado')}</span>
+              <span>🗓️ ${atividade.publicadaEm ? formatarDataAgenda(atividade.publicadaEm) : 'imediata'}</span>
+              <span>👥 ${destinatarios || 'Nenhum aluno'}</span>
+              <span>✅ ${conclusoes} conclusão(ões) · ${atividade.questoes?.length || 0} questão(ões)</span>
+            </div>
+          </div>
+        `;
+      }).join('')
+    : '<div class="info-vazio">Nenhuma atividade registrada.</div>';
+
+  const perfisHtml = perfis.map(item =>
+    `<span class="info-chip">${perfilEmTexto(item.perfil)} <b>${item.total}</b></span>`
+  ).join('');
+  const salasHtml = salas.length
+    ? salas.map(sala => `<span class="info-chip">${sala.texto} <b>${sala.total}</b></span>`).join('')
+    : '<span class="info-vazio">Nenhuma sala com alunos.</span>';
+
+  container.innerHTML = `
+    <div class="detalhe-bloco">
+      <div class="detalhe-bloco-titulo"><b>Contas e salas</b><small>Dados de acesso sem exibir senhas</small></div>
+      <div class="info-chips">${perfisHtml}</div>
+      <div class="info-chips">${salasHtml}${alunosSemTurma ? `<span class="info-chip">Sem turma <b>${alunosSemTurma}</b></span>` : ''}</div>
+      <div class="info-lista">${contasHtml}</div>
+    </div>
+    <div class="detalhe-bloco">
+      <div class="detalhe-bloco-titulo"><b>Todas as atividades</b><small>Agenda, destinatários e progresso</small></div>
+      <div class="info-lista">${atividadesHtml}</div>
+    </div>
+  `;
 }
 
 // ── RECURSO DO PROFESSOR/DIRETOR: GERENCIAR USUÁRIOS ────────────────
@@ -883,7 +961,7 @@ function renderizarAgendaAtividades() {
   if (!lista || !resumo) return;
 
   const atividades = lerAtividadesSalvas().filter(atividade =>
-    perfilSelecionado === 'diretor' || atividade.criador === usuarioLogado
+    ['diretor', 'programador'].includes(perfilSelecionado) || atividade.criador === usuarioLogado
   );
   const agendadas = atividades.filter(atividade => !atividadeFoiLiberada(atividade));
   const liberadas = atividades.filter(atividade => atividadeFoiLiberada(atividade));
