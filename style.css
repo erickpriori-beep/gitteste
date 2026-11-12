@@ -99,8 +99,8 @@ body {
   background: var(--card-bg);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  padding: 48px 44px;
-  border-radius: var(--radius);
+  padding: 44px 40px;
+  border-radius: calc(var(--radius) + 2px);
   border: 1px solid var(--border);
   box-shadow: var(--card-shadow);
   animation: fadeUp 0.4s ease both;
@@ -258,7 +258,7 @@ label {
 
 input, select {
   width: 100%;
-  padding: 14px 16px;
+  padding: 13px 15px;
   background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -272,9 +272,18 @@ input, select {
 input::placeholder { color: var(--text-muted); opacity: 0.5; }
 html[data-theme="claro"] input::placeholder { color: #94a3b8; opacity: 1; }
 
+input:hover, select:hover {
+  border-color: var(--border-hover);
+}
+
 input:focus, select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
 }
 
 select option { background: var(--bg); color: var(--text); }
@@ -301,9 +310,9 @@ button {
 }
 
 button:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.04);
   transform: translateY(-1px);
-  box-shadow: 0 8px 28px var(--primary-glow);
+  box-shadow: 0 6px 20px var(--primary-glow);
 }
 button:active { transform: translateY(0); }
 
@@ -1098,11 +1107,13 @@ html[data-theme="claro"] .agenda-form-box input[type="datetime-local"] { color-s
   border: 1px solid var(--border);
   border-left: 3px solid var(--primary);
   border-radius: var(--radius-sm);
-  padding: 20px;
+  padding: 18px;
   margin-bottom: 16px;
   line-height: 1.75;
   font-size: 0.9rem;
   color: var(--text);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ══════════════════════════════════════════════
@@ -1128,6 +1139,13 @@ html[data-theme="claro"] .agenda-form-box input[type="datetime-local"] { color-s
   align-items: center;
 }
 .input-resposta-wrap input { flex: 1; margin: 0; }
+.restricao-atividade {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-align: left;
+}
 .btn-verificar {
   width: auto;
   padding: 13px 18px;

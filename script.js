@@ -148,6 +148,35 @@ function carregarTema() {
 }
 carregarTema();
 
+function configurarProtecaoAtividades() {
+  const conteudoQuestao = document.getElementById('conteudo-aula');
+  const campoResposta = document.getElementById('input-resposta');
+
+  conteudoQuestao?.addEventListener('contextmenu', evento => {
+    evento.preventDefault();
+  });
+
+  const bloquearColagem = evento => {
+    evento.preventDefault();
+    mostrarFeedback('proximo', 'Digite sua resposta diretamente; colar está desativado.');
+  };
+
+  campoResposta?.addEventListener('paste', bloquearColagem);
+  campoResposta?.addEventListener('drop', bloquearColagem);
+  campoResposta?.addEventListener('beforeinput', evento => {
+    if (['insertFromPaste', 'insertFromDrop'].includes(evento.inputType)) {
+      bloquearColagem(evento);
+    }
+  });
+  campoResposta?.addEventListener('keydown', evento => {
+    if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === 'v') {
+      bloquearColagem(evento);
+    }
+  });
+}
+
+configurarProtecaoAtividades();
+
 // ── BANCO DE QUESTÕES NATIVAS (INALTERADO) ───────────────────────────
 const banco = {
   matematica: {
