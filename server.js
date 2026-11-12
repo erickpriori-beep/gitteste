@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { handleApi, checkDatabaseConnection } = require('./api');
 
 const PORT = Number(process.env.PORT || 80);
 const ROOT = __dirname;
@@ -127,6 +128,8 @@ const servidor = http.createServer(async (req, res) => {
     return;
   }
 
+  if (await handleApi(req, res, url)) return;
+
   if (req.method === 'GET' || req.method === 'HEAD') {
     servirArquivo(req, res, decodeURIComponent(url.pathname));
     return;
@@ -135,6 +138,15 @@ const servidor = http.createServer(async (req, res) => {
   enviarJson(res, 405, { ok: false, message: 'Método não permitido.' });
 });
 
-servidor.listen(PORT, '0.0.0.0', () => {
-  console.log(`educa+ disponível na porta ${PORT}`);
+async function iniciarServidor() {
+  await checkDatabaseConnection();
+  servidor.listen(PORT, '0.0.0.0', () => {
+    console.log(`educa+ com API e banco compartilhado disponível na porta ${PORT}`);
+  });
+}
+
+iniciarServidor().catch(erro => {
+  console.error('Não foi possível iniciar o servidor com o banco de dados.');
+  console.error(erro.message);
+  process.exitCode = 1;
 });

@@ -1,5 +1,5 @@
 entrypoint = "index.html"
-modules = ["web", "nodejs-20", "python-base-3.13"]
+modules = ["web", "nodejs-20", "python-base-3.13", "postgresql-16"]
 
 [nix]
 channel = "stable-24_11"
@@ -7,7 +7,8 @@ packages = ["static-web-server"]
 
 [deployment]
 publicDir = "/"
-deploymentTarget = "static"
+deploymentTarget = "autoscale"
+run = ["node", "server.js"]
 
 [workflows]
 runButton = "Project"

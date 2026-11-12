@@ -1287,3 +1287,243 @@ html[data-theme="claro"] #feedback.errado  { background: rgba(220,38,38,0.07);  
   .tema-picker { max-width: calc(100vw - 24px); padding: 7px 9px; }
   .tema-btn { padding: 5px 8px; font-size: 0.7rem; }
 }
+
+/* Turmas compartilhadas e administração de contas */
+.lista-turmas-api,
+.lista-contas-plataforma {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.turma-card,
+.conta-admin-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.turma-card-topo,
+.conta-admin-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.turma-card-topo h3 {
+  margin: 0 0 4px;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.turma-card-topo span,
+.membro-turma small,
+.responsavel-turma {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.codigo-turma {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.codigo-turma b { color: var(--primary); letter-spacing: 0.06em; }
+.codigo-turma span { color: var(--text-muted); }
+.responsavel-turma { margin-top: 10px; }
+
+.controles-turma,
+.conta-admin-campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.controles-turma .campo,
+.conta-admin-campos .campo { margin-bottom: 0; }
+
+.acoes-turma,
+.conta-admin-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-secundario,
+.btn-perigo {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--input-bg);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.btn-secundario:hover { border-color: var(--primary); transform: translateY(-1px); }
+.btn-perigo { border-color: rgba(239, 68, 68, 0.35); color: #ef4444; }
+.btn-perigo:hover { background: rgba(239, 68, 68, 0.1); }
+
+.lista-membros-turma {
+  display: grid;
+  gap: 8px;
+  margin-top: 15px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.membro-turma {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+}
+
+.membro-turma > div:first-child {
+  display: grid;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.transferir-aluno { display: flex; gap: 7px; align-items: center; }
+.transferir-aluno select { min-width: 150px; padding: 8px; }
+
+.conta-admin-cabecalho { margin-bottom: 2px; overflow-wrap: anywhere; }
+.conta-admin-acoes { margin-top: 14px; }
+.contas-admin-aviso {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.07);
+  color: var(--text);
+  font-size: 0.84rem;
+}
+
+.lista-vazia {
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.mensagem-erro { color: #ef4444; }
+
+@media (max-width: 560px) {
+  .turma-card,
+  .conta-admin-card { padding: 14px; }
+  .turma-card-topo,
+  .membro-turma { align-items: flex-start; flex-direction: column; }
+  .controles-turma,
+  .conta-admin-campos { grid-template-columns: 1fr; }
+  .transferir-aluno { width: 100%; }
+  .transferir-aluno select { flex: 1; min-width: 0; }
+}
+
+.questoes-nota-formulario,
+.lista-notas-api {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.questao-nota-linha {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(110px, 0.38fr) minmax(110px, 0.38fr) auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--input-bg);
+}
+
+.questao-nota-linha label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.questao-nota-linha input { margin: 0; }
+.remover-questao-nota { min-height: 40px; }
+
+.resumo-pontos-nota {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.notas-historico-titulo { margin-top: 26px; }
+.nota-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--card-bg);
+}
+
+.nota-card-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.nota-card-topo h3 {
+  margin: 0 0 4px;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.nota-card-topo span,
+.nota-resumo-pontos { color: var(--text-muted); font-size: 0.82rem; }
+.nota-total { white-space: nowrap; color: var(--primary); }
+.nota-total b { font-size: 1.3rem; }
+.nota-total small { color: var(--text-muted); }
+.nota-resumo-pontos { margin-top: 9px; }
+.nota-questoes { display: grid; gap: 6px; margin-top: 12px; }
+.nota-questoes > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.82rem;
+}
+.nota-questoes > div span { overflow-wrap: anywhere; }
+.nota-questoes > div b { flex-shrink: 0; }
+
+@media (max-width: 700px) {
+  .questao-nota-linha { grid-template-columns: 1fr 1fr; }
+  .questao-nota-enunciado { grid-column: 1 / -1; }
+  .questao-nota-linha .remover-questao-nota { grid-column: 1 / -1; }
+}
+
+@media (max-width: 480px) {
+  .nota-card-topo { flex-direction: column; }
+  .nota-questoes > div { align-items: flex-start; flex-direction: column; gap: 3px; }
+}

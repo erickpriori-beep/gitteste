@@ -50,29 +50,21 @@
             <div class="divider"></div>
 
             <form id="auth-form" onsubmit="event.preventDefault(); autenticar()">
-                <div class="campo">
-                    <label for="usuario">E-mail de acesso</label>
-                    <input type="email" id="usuario" placeholder="voce@exemplo.com" autocomplete="email">
-                </div>
-                <div class="campo turma-auth-campo" id="turma-auth-campo">
-                    <label for="turma-aluno">Sala / Turma</label>
-                    <select id="turma-aluno" autocomplete="organization-title">
-                        <option value="">Selecione sua sala</option>
-                        <option value="1A">1º A</option>
-                        <option value="1B">1º B</option>
-                        <option value="1C">1º C</option>
-                        <option value="2A">2º A</option>
-                        <option value="2B">2º B</option>
-                        <option value="2C">2º C</option>
-                        <option value="2D">2º D</option>
-                        <option value="3A">3º A</option>
-                        <option value="3B">3º B</option>
-                        <option value="3C">3º C</option>
-                        <option value="9A">9º A</option>
-                        <option value="9B">9º B</option>
-                        <option value="9C">9º C</option>
+                <div class="campo" id="metodo-acesso-campo">
+                    <label for="metodo-acesso">Entrar com</label>
+                    <select id="metodo-acesso" onchange="atualizarCampoIdentificador()">
+                        <option value="email">E-mail</option>
+                        <option value="username">Usuário</option>
                     </select>
-                    <small class="campo-ajuda">A turma fica vinculada à sua conta para organizar as atividades.</small>
+                </div>
+                <div class="campo">
+                    <label id="usuario-label" for="usuario">E-mail de acesso</label>
+                    <input type="text" id="usuario" placeholder="voce@exemplo.com" autocomplete="username">
+                </div>
+                <div class="campo turma-auth-campo hidden" id="turma-auth-campo">
+                    <label for="codigo-turma-aluno">Código da turma (opcional)</label>
+                    <input type="text" id="codigo-turma-aluno" placeholder="Código enviado pelo professor" autocomplete="off">
+                    <small class="campo-ajuda">Você também poderá entrar em uma turma depois do cadastro.</small>
                 </div>
                 <div class="campo">
                     <label id="senha-label" for="senha">Senha</label>
@@ -122,6 +114,16 @@
                 <button class="btn-menu-opcao" onclick="irParaAtividadesAluno()">
                     <span class="menu-action-icon">📝</span>
                     <span class="menu-action-copy"><b>Minhas Atividades</b><small>Veja tarefas recentes e pendentes</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaEntrarTurma()">
+                    <span class="menu-action-icon">🏫</span>
+                    <span class="menu-action-copy"><b>Minhas Turmas</b><small>Entre com um código enviado pelo professor</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaNotas()">
+                    <span class="menu-action-icon">⭐</span>
+                    <span class="menu-action-copy"><b>Minhas notas</b><small>Consulte pontos e notas das atividades</small></span>
                     <span class="menu-action-arrow">→</span>
                 </button>
             </div>
@@ -205,6 +207,16 @@
                     <span class="menu-action-copy"><b>Agenda</b><small>Programe quando cada atividade será lançada</small></span>
                     <span class="menu-action-arrow">→</span>
                 </button>
+                <button class="btn-menu-opcao" onclick="irParaGerenciarTurmas()">
+                    <span class="menu-action-icon">🏫</span>
+                    <span class="menu-action-copy"><b>Minhas turmas</b><small>Crie salas, compartilhe códigos e transfira alunos</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaNotas()">
+                    <span class="menu-action-icon">⭐</span>
+                    <span class="menu-action-copy"><b>Notas e pontos</b><small>Atribua valores às questões e atividades</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
             </div>
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
@@ -249,6 +261,16 @@
                     <span class="menu-action-copy"><b>Agenda de lançamentos</b><small>Planeje atividades por data e por aluno</small></span>
                     <span class="menu-action-arrow">→</span>
                 </button>
+                <button class="btn-menu-opcao" onclick="irParaGerenciarTurmas()">
+                    <span class="menu-action-icon">🏫</span>
+                    <span class="menu-action-copy"><b>Administrar turmas</b><small>Consulte e gerencie as salas da escola</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaNotas()">
+                    <span class="menu-action-icon">⭐</span>
+                    <span class="menu-action-copy"><b>Notas e pontos</b><small>Consulte e atribua notas das atividades</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
             </div>
             <button onclick="fazerLogout()" class="btn-voltar" style="margin-top: 20px;">🚪 Sair da Conta</button>
         </div>
@@ -283,6 +305,21 @@
                     <span class="menu-action-copy"><b>Ver usuários cadastrados</b><small>Inspecione os perfis registrados</small></span>
                     <span class="menu-action-arrow">→</span>
                 </button>
+                <button class="btn-menu-opcao" onclick="irParaContasPlataforma()">
+                    <span class="menu-action-icon">⚙️</span>
+                    <span class="menu-action-copy"><b>Administrar contas</b><small>Altere perfis, suspenda ou exclua contas</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaGerenciarTurmas()">
+                    <span class="menu-action-icon">🏫</span>
+                    <span class="menu-action-copy"><b>Todas as turmas</b><small>Consulte e administre as salas da plataforma</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
+                <button class="btn-menu-opcao" onclick="irParaNotas()">
+                    <span class="menu-action-icon">⭐</span>
+                    <span class="menu-action-copy"><b>Notas da plataforma</b><small>Consulte as notas registradas</small></span>
+                    <span class="menu-action-arrow">→</span>
+                </button>
                 <button class="btn-menu-opcao" onclick="irParaAgendaAtividades()">
                     <span class="menu-action-icon">🗓️</span>
                     <span class="menu-action-copy"><b>Agenda completa</b><small>Consulte todos os lançamentos e destinatários</small></span>
@@ -303,8 +340,11 @@
 
         <div id="secao-painel-programador" class="hidden">
             <h2>Painel do sistema</h2>
-            <p>Visão completa das informações operacionais do educa+</p>
+            <p>Contas, turmas e notas compartilhadas na plataforma</p>
             <div id="resumo-programador" class="resumo-grid"></div>
+            <div id="detalhes-compartilhados-programador" class="painel-detalhes-programador"></div>
+            <div class="divider"></div>
+            <div class="detalhe-bloco-titulo"><b>Atividades locais deste aparelho</b><small>Agenda e exercícios que ainda não foram sincronizados</small></div>
             <div id="detalhes-programador" class="painel-detalhes-programador"></div>
             <div class="status-sistema">
                 <span class="status-ponto"></span>
@@ -321,6 +361,79 @@
             <div id="banco-alunos-lista" class="banco-dados-box"></div>
             
             <button onclick="voltarParaMenuGestao()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+        </div>
+
+        <div id="secao-gerenciar-turmas" class="hidden">
+            <h2 id="titulo-gerenciar-turmas">Minhas turmas</h2>
+            <p id="descricao-gerenciar-turmas">Crie turmas e compartilhe o código com seus alunos.</p>
+            <div id="form-criar-turma" class="agenda-form-box">
+                <div class="campo">
+                    <label for="nome-nova-turma">Nome da turma</label>
+                    <input type="text" id="nome-nova-turma" maxlength="80" placeholder="Ex.: 2º A — Matemática">
+                </div>
+                <div class="campo hidden" id="campo-professor-responsavel">
+                    <label for="professor-responsavel-turma">Professor responsável</label>
+                    <select id="professor-responsavel-turma">
+                        <option value="">Sem professor atribuído</option>
+                    </select>
+                </div>
+                <button class="btn-confirmar" onclick="criarTurmaApi()">Criar turma e gerar código</button>
+            </div>
+            <div id="lista-turmas-api" class="lista-turmas-api"></div>
+            <button onclick="voltarParaMenuGestao()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+        </div>
+
+        <div id="secao-entrar-turma" class="hidden">
+            <h2>Minhas turmas</h2>
+            <p>Entre em uma turma usando o código enviado pelo professor</p>
+            <div class="agenda-form-box">
+                <div class="campo">
+                    <label for="codigo-entrada-turma">Código da turma</label>
+                    <input type="text" id="codigo-entrada-turma" maxlength="10" placeholder="Ex.: A1B2C3D4E5" autocomplete="off">
+                </div>
+                <button class="btn-confirmar" onclick="entrarTurmaPorCodigo()">Entrar na turma</button>
+            </div>
+            <div id="lista-turmas-aluno" class="lista-turmas-api"></div>
+            <button onclick="voltarParaMenuAluno()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+        </div>
+
+        <div id="secao-contas-plataforma" class="hidden">
+            <h2>Contas da plataforma</h2>
+            <p>Altere perfis, suspenda ou exclua contas da plataforma</p>
+            <div class="contas-admin-aviso">A exclusão encerra sessões, remove a conta das turmas e apaga as notas vinculadas. A ação não pode ser desfeita.</div>
+            <div id="lista-contas-plataforma" class="lista-contas-plataforma"></div>
+            <button onclick="voltarParaMenuProgramador()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
+        </div>
+
+        <div id="secao-notas" class="hidden">
+            <h2 id="titulo-notas">Notas e pontos</h2>
+            <p id="descricao-notas">Registre os pontos de cada questão e acompanhe a nota total.</p>
+            <div id="form-notas" class="agenda-form-box">
+                <div class="campo">
+                    <label for="turma-nota">Turma</label>
+                    <select id="turma-nota" onchange="atualizarAlunosNota()">
+                        <option value="">Selecione uma turma</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="aluno-nota">Aluno</label>
+                    <select id="aluno-nota">
+                        <option value="">Selecione um aluno</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="atividade-nota">Nome da atividade</label>
+                    <input id="atividade-nota" type="text" maxlength="120" placeholder="Ex.: Avaliação de Ciências">
+                </div>
+                <div class="detalhe-bloco-titulo"><b>Valores das questões</b><small>Informe os pontos possíveis e obtidos em cada questão.</small></div>
+                <div id="questoes-nota-formulario" class="questoes-nota-formulario"></div>
+                <button id="btn-adicionar-questao-nota" class="btn-secundario" type="button" onclick="adicionarQuestaoNota()">+ Adicionar questão</button>
+                <div id="resumo-pontos-nota" class="resumo-pontos-nota">Nota total: 0 / 0 pontos · 0,00 / 10</div>
+                <button class="btn-confirmar" type="button" onclick="salvarNotaAtividade()">Salvar nota</button>
+            </div>
+            <div class="detalhe-bloco-titulo notas-historico-titulo"><b>Notas registradas</b></div>
+            <div id="lista-notas-api" class="lista-notas-api"></div>
+            <button onclick="voltarDoPainelNotas()" class="btn-voltar" style="margin-top: 20px;">← Voltar ao Menu</button>
         </div>
 
         <div id="secao-agenda-atividades" class="hidden">

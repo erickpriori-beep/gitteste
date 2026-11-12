@@ -1,6 +1,7 @@
 let modoLogin = true;
 let perfilSelecionado = 'aluno'; // 'aluno', 'professor', 'diretor' ou 'programador'
 let usuarioLogado = null;
+let contaAtual = null;
 let intervaloAgenda = null;
 
 let questaoAtual = null;
@@ -18,6 +19,7 @@ let abaAtivaAluno = 'recentes';
 let bancoAtividadesCustomizadas = [];
 // Armazena temporariamente as questões que o professor está montando no formulário (Máx 8)
 let questoesFormularioProfessor = [];
+let questoesNotaFormulario = [];
 
 const nomesPerfis = {
   aluno: 'Aluno',
@@ -46,8 +48,47 @@ function perfilEmTexto(perfil) {
   return nomesPerfis[perfil] || nomesPerfis.aluno;
 }
 
+async function solicitarApi(caminho, opcoes = {}) {
+  const resposta = await fetch(caminho, {
+    credentials: 'same-origin',
+    ...opcoes,
+    headers: {
+      ...(opcoes.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(opcoes.headers || {})
+    }
+  });
+  const dados = await resposta.json().catch(() => ({}));
+  if (!resposta.ok) {
+    const erro = new Error(dados.message || 'Não foi possível concluir a solicitação.');
+    erro.status = resposta.status;
+    erro.code = dados.code;
+    throw erro;
+  }
+  return dados;
+}
+
+function atualizarCampoIdentificador() {
+  const metodo = perfilSelecionado === 'aluno'
+    ? 'email'
+    : document.getElementById('metodo-acesso')?.value || 'email';
+  const campo = document.getElementById('usuario');
+  const rotulo = document.getElementById('usuario-label');
+  const seletor = document.getElementById('metodo-acesso-campo');
+  if (!campo) return;
+
+  const usarEmail = metodo === 'email';
+  campo.type = usarEmail ? 'email' : 'text';
+  campo.placeholder = usarEmail ? 'voce@exemplo.com' : 'Ex.: ana.silva';
+  campo.autocomplete = usarEmail ? 'email' : 'username';
+  if (rotulo) rotulo.innerText = usarEmail ? 'E-mail de acesso' : 'Nome de usuário';
+  if (seletor) seletor.classList.toggle('hidden', perfilSelecionado === 'aluno');
+}
+
 function turmaEmTexto(turma) {
-  return turmasDisponiveis.find(opcao => opcao.valor === turma)?.texto || 'Sem turma';
+  return turmasDisponiveis.find(opcao => opcao.valor === turma)?.texto ||
+    window.turmasApiAtuais?.find(opcao => opcao.name === turma)?.name ||
+    turma ||
+    'Sem turma';
 }
 
 function lerAtividadesSalvas() {
@@ -298,7 +339,10 @@ function selecionarPerfil(perfil) {
   }
 
   const turmaCampo = document.getElementById('turma-auth-campo');
-  if (turmaCampo) turmaCampo.classList.toggle('hidden', perfil !== 'aluno');
+  if (turmaCampo) turmaCampo.classList.toggle('hidden', perfil !== 'aluno' || modoLogin);
+  const metodoAcesso = document.getElementById('metodo-acesso');
+  if (metodoAcesso && perfil === 'aluno') metodoAcesso.value = 'email';
+  atualizarCampoIdentificador();
 }
 
 function alternarTela(login) {
@@ -309,6 +353,10 @@ function alternarTela(login) {
   document.getElementById('msg-troca').innerHTML = login
     ? 'Não tem conta? <a onclick="alternarTela(false)">Registre-se grátis</a>'
     : 'Já tem conta? <a onclick="alternarTela(true)">Fazer Login</a>';
+  const codigoTurma = document.getElementById('codigo-turma-aluno');
+  if (codigoTurma) codigoTurma.value = '';
+  const turmaCampo = document.getElementById('turma-auth-campo');
+  if (turmaCampo) turmaCampo.classList.toggle('hidden', perfilSelecionado !== 'aluno' || login);
 }
 
 async function validarAcessoAdministrativo(perfil, senha) {
@@ -330,126 +378,154 @@ async function validarAcessoAdministrativo(perfil, senha) {
   }
 }
 
-async function autenticar() {
-  const user = document.getElementById('usuario').value.trim().toLowerCase();
-  const pass = document.getElementById('senha').value;
-  const turma = document.getElementById('turma-aluno')?.value || '';
-  const perfilAdministrativo = ['diretor', 'programador'].includes(perfilSelecionado);
-  if (!user || !pass) { alert("Por favor, preencha todos os campos."); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user)) {
-    alert("Digite um e-mail válido para continuar.");
-    return;
-  }
-  if (perfilSelecionado === 'aluno' && !turma) {
-    alert("Selecione sua sala para continuar.");
-    return;
-  }
+function entrarNaContaApi(conta) {
+  contaAtual = conta;
+  usuarioLogado = conta.email || conta.username;
+  perfilSelecionado = conta.role;
+  document.getElementById('secao-auth').classList.add('hidden');
+  registrarUsuario(conta);
 
-  if (!modoLogin) {
-    const chaveUsuario = 'user_' + user;
-    if (localStorage.getItem(chaveUsuario)) {
-      alert("Este e-mail já está cadastrado. Faça login ou use outro e-mail.");
-      return;
-    }
+  if (conta.role === 'aluno') entrarMenuAluno();
+  else if (conta.role === 'professor') entrarMenuProfessor();
+  else if (conta.role === 'diretor') entrarMenuDiretor();
+  else entrarMenuProgramador();
 
-    if (perfilAdministrativo && !(await validarAcessoAdministrativo(perfilSelecionado, pass))) {
-      return;
-    }
+  sincronizarCacheApi().catch(erro => {
+    console.warn('Não foi possível atualizar a lista compartilhada de contas.', erro);
+  });
+}
 
-    // A senha administrativa nunca é salva no navegador.
-    const dadosUsuario = perfilAdministrativo
-      ? { email: user, perfil: perfilSelecionado, protegido: true }
-      : {
-        email: user,
-        senha: pass,
-        perfil: perfilSelecionado,
-        ...(perfilSelecionado === 'aluno' ? { turma } : {})
-      };
-    localStorage.setItem(chaveUsuario, JSON.stringify(dadosUsuario));
-    registrarUsuario(dadosUsuario);
+async function sincronizarCacheApi() {
+  if (!contaAtual || !['professor', 'diretor', 'programador'].includes(contaAtual.role)) return;
+  const [dados, turmas] = await Promise.all([
+    solicitarApi('/api/accounts'),
+    buscarTurmasApi()
+  ]);
+  window.turmasApiAtuais = turmas;
+  const usuarios = dados.accounts.map(usuario => ({
+    id: usuario.id,
+    email: usuario.email,
+    username: usuario.username,
+    perfil: usuario.role,
+    ativo: usuario.active,
+    turma: usuario.classes?.[0] || ''
+  }));
+  localStorage.setItem('educa-usuarios', JSON.stringify(usuarios));
+  atualizarEstatisticasMenus();
+}
 
-    // Adiciona ao banco de dados simulado caso seja um aluno
-    if (perfilSelecionado === 'aluno') {
-      atualizarBancoAlunosLocal(user);
-    }
-
-    alert(`Conta de ${perfilEmTexto(perfilSelecionado).toUpperCase()} criada com sucesso! 🎉`);
-    alternarTela(true);
-  } else {
-    const dadosSalvosRaw = localStorage.getItem('user_' + user);
-    let dadosSalvos = null;
-    if (dadosSalvosRaw) {
-      try {
-        dadosSalvos = JSON.parse(dadosSalvosRaw);
-      } catch (erro) {
-        alert("Não foi possível ler esta conta. Faça um novo cadastro.");
-        return;
-      }
-    }
-
-    // Diretor e Programador usam a senha secreta do servidor como credencial.
-    // O e-mail é registrado automaticamente no primeiro login válido.
-    if (perfilAdministrativo) {
-      if (!(await validarAcessoAdministrativo(perfilSelecionado, pass))) return;
-      if (dadosSalvos && dadosSalvos.perfil !== perfilSelecionado) {
-        alert("Este e-mail já está vinculado a outro perfil.");
-        return;
-      }
-      if (!dadosSalvos) {
-        dadosSalvos = { email: user, perfil: perfilSelecionado, protegido: true };
-        localStorage.setItem('user_' + user, JSON.stringify(dadosSalvos));
-      }
-    } else if (!dadosSalvos) {
-      alert("E-mail não encontrado. Faça seu cadastro primeiro.");
-      return;
-    }
-
-    const senhaValida = perfilAdministrativo || dadosSalvos.senha === pass;
-
-    if (!(senhaValida && dadosSalvos.perfil === perfilSelecionado)) {
-      alert("Senha incorreta ou perfil de acesso inválido.");
-      return;
-    }
-
-    if (perfilSelecionado === 'aluno') {
-      if (dadosSalvos.turma && dadosSalvos.turma !== turma) {
-        alert(`Esta conta está vinculada à turma ${turmaEmTexto(dadosSalvos.turma)}.`);
-        return;
-      }
-      // Contas de alunos antigas recebem a turma no primeiro login após a atualização.
-      if (!dadosSalvos.turma) {
-        dadosSalvos.turma = turma;
-        localStorage.setItem('user_' + user, JSON.stringify(dadosSalvos));
-      }
-    }
-
-    usuarioLogado = user;
-    registrarUsuario({
-      email: user,
-      perfil: dadosSalvos.perfil,
-      turma: dadosSalvos.turma
-    });
-    document.getElementById('secao-auth').classList.add('hidden');
-
-    if (perfilSelecionado === 'aluno') {
-      entrarMenuAluno();
-    } else if (perfilSelecionado === 'professor') {
-      entrarMenuProfessor();
-    } else if (perfilSelecionado === 'diretor') {
-      entrarMenuDiretor();
-    } else {
-      entrarMenuProgramador();
-    }
+async function restaurarSessaoApi() {
+  try {
+    const dados = await solicitarApi('/api/auth/me');
+    if (dados.account) entrarNaContaApi(dados.account);
+  } catch {
+    // Uma sessão ausente ou expirada mantém o formulário de login visível.
   }
 }
 
-function fazerLogout() {
+async function migrarContaLocalLegada(email, senha, perfil) {
+  const chave = `user_${email}`;
+  const contaLocalRaw = localStorage.getItem(chave);
+  if (!contaLocalRaw) return null;
+
+  let contaLocal;
+  try {
+    contaLocal = JSON.parse(contaLocalRaw);
+  } catch {
+    return null;
+  }
+  if (contaLocal.perfil !== perfil || contaLocal.senha !== senha) return null;
+
+  const dados = await solicitarApi('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      identifier: email,
+      loginMethod: 'email',
+      role: perfil,
+      password: senha,
+      legacyImport: true
+    })
+  });
+  localStorage.removeItem(chave);
+  return dados;
+}
+
+async function autenticar() {
+  const campoIdentificador = document.getElementById('usuario');
+  const metodo = perfilSelecionado === 'aluno'
+    ? 'email'
+    : document.getElementById('metodo-acesso').value;
+  const identifier = campoIdentificador.value.trim().toLowerCase();
+  const password = document.getElementById('senha').value;
+  const joinCode = document.getElementById('codigo-turma-aluno').value.trim().toUpperCase();
+  if (!identifier || !password) {
+    alert('Preencha o identificador e a senha para continuar.');
+    return;
+  }
+  if (metodo === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+    alert('Digite um e-mail válido para continuar.');
+    return;
+  }
+  if (metodo === 'username' && !/^[a-z0-9._-]{3,32}$/.test(identifier)) {
+    alert('O usuário deve ter de 3 a 32 caracteres: letras, números, ponto, hífen ou sublinhado.');
+    return;
+  }
+  if (joinCode && perfilSelecionado !== 'aluno') {
+    alert('O código de turma só pode ser usado por alunos.');
+    return;
+  }
+
+  const payload = {
+    identifier,
+    loginMethod: metodo,
+    role: perfilSelecionado,
+    password
+  };
+
+  try {
+    let resultado;
+    if (!modoLogin) {
+      resultado = await solicitarApi('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ ...payload, joinCode })
+      });
+      alert(`Conta de ${perfilEmTexto(perfilSelecionado)} criada com sucesso.`);
+    } else {
+      try {
+        resultado = await solicitarApi('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+      } catch (erroLogin) {
+        if (erroLogin.code !== 'account_not_found' || metodo !== 'email') throw erroLogin;
+        resultado = await migrarContaLocalLegada(identifier, password, perfilSelecionado);
+        if (!resultado) throw erroLogin;
+        alert('Sua conta antiga foi transferida para o acesso compartilhado.');
+      }
+    }
+
+    entrarNaContaApi(resultado.account);
+    campoIdentificador.value = '';
+    document.getElementById('senha').value = '';
+    document.getElementById('codigo-turma-aluno').value = '';
+  } catch (erro) {
+    alert(erro.message || 'Não foi possível acessar sua conta.');
+  }
+}
+
+async function fazerLogout() {
+  try {
+    await solicitarApi('/api/auth/logout', { method: 'POST', body: '{}' });
+  } catch (erro) {
+    console.warn('Não foi possível encerrar a sessão no servidor.', erro);
+  }
   usuarioLogado = null;
+  contaAtual = null;
   ocultarTodasAsSecoes();
   document.getElementById('secao-auth').classList.remove('hidden');
   document.getElementById('usuario').value = '';
-  document.getElementById('turma-aluno').value = '';
   document.getElementById('senha').value = '';
+  document.getElementById('codigo-turma-aluno').value = '';
 }
 
 // ── INTERFACES DOS MENUS ─────────────────────────────────────────────
@@ -552,7 +628,8 @@ function ocultarTodasAsSecoes() {
     'secao-auth', 'secao-menu-aluno', 'secao-curso', 'secao-atividades-aluno',
     'secao-menu-professor', 'secao-menu-diretor', 'secao-menu-programador',
     'secao-painel-diretor', 'secao-painel-programador',
-    'secao-gerenciar-alunos', 'secao-agenda-atividades',
+    'secao-gerenciar-alunos', 'secao-gerenciar-turmas', 'secao-entrar-turma',
+    'secao-contas-plataforma', 'secao-notas', 'secao-agenda-atividades',
     'secao-atribuir-atividade', 'secao-aula'
   ];
   secoes.forEach(id => {
@@ -573,17 +650,32 @@ function lerUsuariosSalvos() {
 }
 
 function registrarUsuario(dadosUsuario) {
-  if (!dadosUsuario?.email) return;
+  if (!dadosUsuario) return;
   const usuarios = lerUsuariosSalvos();
-  const email = dadosUsuario.email.toLowerCase();
-  const existente = usuarios.find(usuario => usuario.email === email);
+  const email = dadosUsuario.email?.toLowerCase() || null;
+  const username = dadosUsuario.username?.toLowerCase() || null;
+  const perfil = dadosUsuario.perfil || dadosUsuario.role;
+  const chave = email || username;
+  if (!chave) return;
+  const existente = usuarios.find(usuario =>
+    (dadosUsuario.id && usuario.id === dadosUsuario.id) ||
+    (email && usuario.email === email) ||
+    (username && usuario.username === username)
+  );
   if (existente) {
-    existente.perfil = dadosUsuario.perfil;
+    existente.id = dadosUsuario.id || existente.id;
+    existente.email = email || existente.email;
+    existente.username = username || existente.username;
+    existente.perfil = perfil;
+    existente.ativo = dadosUsuario.active ?? existente.ativo ?? true;
     if (dadosUsuario.turma) existente.turma = dadosUsuario.turma;
   } else {
     usuarios.push({
+      id: dadosUsuario.id,
       email,
-      perfil: dadosUsuario.perfil,
+      username,
+      perfil,
+      ativo: dadosUsuario.active ?? true,
       ...(dadosUsuario.turma ? { turma: dadosUsuario.turma } : {}),
       cadastradoEm: new Date().toISOString()
     });
@@ -616,49 +708,80 @@ function irParaPainelDiretor() {
     : '<span style="color: var(--text-muted)">Nenhuma atividade foi publicada ainda.</span>';
 }
 
-function irParaPainelProgramador() {
+async function irParaPainelProgramador() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-painel-programador').classList.remove('hidden');
-
-  const usuarios = lerUsuariosSalvos();
-  const atividades = lerAtividadesSalvas();
-  document.getElementById('resumo-programador').innerHTML = `
-    <div class="resumo-card"><strong>${usuarios.length}</strong><span>Contas</span></div>
-    <div class="resumo-card"><strong>${atividades.length}</strong><span>Atividades</span></div>
-    <div class="resumo-card"><strong>${localStorage.length}</strong><span>Registros locais</span></div>
-    <div class="resumo-card"><strong>OK</strong><span>Status</span></div>
-  `;
-  renderizarDetalhesProgramador(usuarios, atividades);
+  document.getElementById('detalhes-compartilhados-programador').innerHTML =
+    '<div class="lista-vazia">Carregando dados compartilhados…</div>';
+  try {
+    const [contasData, turmasData, notasData] = await Promise.all([
+      solicitarApi('/api/accounts'),
+      buscarTurmasApi(),
+      solicitarApi('/api/grades')
+    ]);
+    const contas = contasData.accounts || [];
+    const turmas = turmasData || [];
+    const notas = notasData.grades || [];
+    const atividadesLocais = lerAtividadesSalvas();
+    const alunos = contas.filter(conta => conta.role === 'aluno').length;
+    const professores = contas.filter(conta => conta.role === 'professor').length;
+    document.getElementById('resumo-programador').innerHTML = `
+      <div class="resumo-card"><strong>${contas.length}</strong><span>Contas compartilhadas</span></div>
+      <div class="resumo-card"><strong>${turmas.length}</strong><span>Turmas</span></div>
+      <div class="resumo-card"><strong>${notas.length}</strong><span>Notas</span></div>
+      <div class="resumo-card"><strong>${alunos}</strong><span>Alunos · ${professores} professores</span></div>
+    `;
+    renderizarDetalhesProgramador(contas, atividadesLocais, turmas, notas);
+  } catch (erro) {
+    document.getElementById('resumo-programador').innerHTML = '';
+    document.getElementById('detalhes-compartilhados-programador').innerHTML =
+      `<div class="lista-vazia mensagem-erro">${escapeHtml(erro.message)}</div>`;
+    renderizarDetalhesProgramador([], lerAtividadesSalvas(), [], []);
+  }
 }
 
-function renderizarDetalhesProgramador(usuarios, atividades) {
-  const container = document.getElementById('detalhes-programador');
-  if (!container) return;
+function renderizarDetalhesProgramador(contas, atividades, turmas = [], notas = []) {
+  const painelCompartilhado = document.getElementById('detalhes-compartilhados-programador');
+  const painelLocal = document.getElementById('detalhes-programador');
+  if (!painelCompartilhado || !painelLocal) return;
 
-  const perfis = Object.keys(nomesPerfis).map(perfil => ({
-    perfil,
-    total: usuarios.filter(usuario => usuario.perfil === perfil).length
+  const perfis = Object.keys(nomesPerfis).map(role => ({
+    role,
+    total: contas.filter(conta => conta.role === role).length
   }));
-  const salas = turmasDisponiveis
-    .map(turma => ({
-      ...turma,
-      total: usuarios.filter(usuario => usuario.perfil === 'aluno' && usuario.turma === turma.valor).length
-    }))
-    .filter(turma => turma.total > 0);
-  const alunosSemTurma = usuarios.filter(usuario =>
-    usuario.perfil === 'aluno' && !usuario.turma
-  ).length;
-
-  const contasHtml = usuarios.length
-    ? [...usuarios]
-      .sort((a, b) => a.email.localeCompare(b.email))
-      .map(usuario => `
+  const contasHtml = contas.length
+    ? [...contas]
+      .sort((a, b) => (a.email || a.username || '').localeCompare(b.email || b.username || ''))
+      .map(conta => `
         <div class="info-linha">
-          <span>${escapeHtml(usuario.email)}</span>
-          <small>${perfilEmTexto(usuario.perfil)}${usuario.turma ? ` · ${turmaEmTexto(usuario.turma)}` : ''}</small>
+          <span>${escapeHtml(conta.email || conta.username)}</span>
+          <small>${perfilEmTexto(conta.role)}${conta.classes?.length ? ` · ${conta.classes.map(escapeHtml).join(', ')}` : ''} · ${conta.active ? 'Ativa' : 'Suspensa'}</small>
         </div>
       `).join('')
     : '<div class="info-vazio">Nenhuma conta registrada.</div>';
+
+  const turmasHtml = turmas.length
+    ? turmas.map(turma => `
+      <div class="info-linha">
+        <span>${escapeHtml(turma.name)}</span>
+        <small>${escapeHtml(turma.teacher_identifier || 'Sem professor')} · ${Number(turma.member_count || 0)} aluno(s)${turma.join_code ? ` · Código ${escapeHtml(turma.join_code)}` : ''}</small>
+      </div>
+    `).join('')
+    : '<div class="info-vazio">Nenhuma turma registrada.</div>';
+
+  const notasHtml = notas.length
+    ? notas.slice(0, 30).map(nota => {
+      const possible = Number(nota.possible_points);
+      const earned = Number(nota.earned_points);
+      const score = possible > 0 ? (earned / possible) * 10 : 0;
+      return `
+        <div class="info-linha">
+          <span>${escapeHtml(nota.activity_title)} — ${escapeHtml(nota.student_identifier)}</span>
+          <small>${escapeHtml(nota.class_name)} · ${earned.toFixed(2)}/${possible.toFixed(2)} pts · nota ${score.toFixed(2)}/10</small>
+        </div>
+      `;
+    }).join('')
+    : '<div class="info-vazio">Nenhuma nota registrada.</div>';
 
   const atividadesHtml = atividades.length
     ? [...atividades]
@@ -688,88 +811,576 @@ function renderizarDetalhesProgramador(usuarios, atividades) {
     : '<div class="info-vazio">Nenhuma atividade registrada.</div>';
 
   const perfisHtml = perfis.map(item =>
-    `<span class="info-chip">${perfilEmTexto(item.perfil)} <b>${item.total}</b></span>`
+    `<span class="info-chip">${perfilEmTexto(item.role)} <b>${item.total}</b></span>`
   ).join('');
-  const salasHtml = salas.length
-    ? salas.map(sala => `<span class="info-chip">${sala.texto} <b>${sala.total}</b></span>`).join('')
-    : '<span class="info-vazio">Nenhuma sala com alunos.</span>';
 
-  container.innerHTML = `
+  painelCompartilhado.innerHTML = `
     <div class="detalhe-bloco">
-      <div class="detalhe-bloco-titulo"><b>Contas e salas</b><small>Dados de acesso sem exibir senhas</small></div>
+      <div class="detalhe-bloco-titulo"><b>Contas compartilhadas</b><small>Dados de acesso sem exibir senhas</small></div>
       <div class="info-chips">${perfisHtml}</div>
-      <div class="info-chips">${salasHtml}${alunosSemTurma ? `<span class="info-chip">Sem turma <b>${alunosSemTurma}</b></span>` : ''}</div>
       <div class="info-lista">${contasHtml}</div>
     </div>
     <div class="detalhe-bloco">
-      <div class="detalhe-bloco-titulo"><b>Todas as atividades</b><small>Agenda, destinatários e progresso</small></div>
+      <div class="detalhe-bloco-titulo"><b>Todas as turmas</b><small>Responsáveis, matrículas e códigos</small></div>
+      <div class="info-lista">${turmasHtml}</div>
+    </div>
+    <div class="detalhe-bloco">
+      <div class="detalhe-bloco-titulo"><b>Notas registradas</b><small>${notas.length} registro(s) · exibindo até 30</small></div>
+      <div class="info-lista">${notasHtml}</div>
+    </div>
+  `;
+  painelLocal.innerHTML = `
+    <div class="detalhe-bloco">
+      <div class="detalhe-bloco-titulo"><b>Atividades deste aparelho</b><small>Agenda, destinatários e progresso guardados localmente</small></div>
       <div class="info-lista">${atividadesHtml}</div>
     </div>
   `;
 }
 
 // ── RECURSO DO PROFESSOR/DIRETOR: GERENCIAR USUÁRIOS ────────────────
-function irParaGerenciarAlunos() {
+async function irParaGerenciarAlunos() {
   ocultarTodasAsSecoes();
   document.getElementById('secao-gerenciar-alunos').classList.remove('hidden');
 
   const container = document.getElementById('banco-alunos-lista');
-  container.innerHTML = '';
-
-  let usuarios = lerUsuariosSalvos();
-  // Compatibilidade com cadastros de aluno criados antes do registro por e-mail.
-  if (usuarios.length === 0) {
-    let listaAlunos = [];
-    try {
-      listaAlunos = JSON.parse(localStorage.getItem('educa-lista-alunos') || '[]');
-    } catch (erro) {
-      listaAlunos = [];
+  container.innerHTML = '<div class="item-lista">Carregando contas compartilhadas…</div>';
+  try {
+    const { accounts } = await solicitarApi('/api/accounts');
+    if (!accounts.length) {
+      container.innerHTML = '<div class="item-lista" style="color: var(--text-muted)">Nenhum aluno encontrado nas turmas administradas por esta conta.</div>';
+      return;
     }
-    usuarios = listaAlunos.map(email => ({ email, perfil: 'aluno' }));
-  }
-
-  if (usuarios.length === 0) {
-    container.innerHTML = '<div class="item-lista" style="color: var(--text-muted)">Nenhuma conta registrada ainda.</div>';
-    return;
-  }
-
-  const grupos = new Map();
-  usuarios.forEach(usuario => {
-    const chave = usuario.perfil === 'aluno' ? (usuario.turma || 'sem-turma') : 'equipe';
-    if (!grupos.has(chave)) grupos.set(chave, []);
-    grupos.get(chave).push(usuario);
-  });
-
-  const ordemGrupos = [...grupos.keys()].sort((a, b) => {
-    if (a === 'equipe') return 1;
-    if (b === 'equipe') return -1;
-    const turmaA = turmasDisponiveis.findIndex(opcao => opcao.valor === a);
-    const turmaB = turmasDisponiveis.findIndex(opcao => opcao.valor === b);
-    return (turmaA === -1 ? 999 : turmaA) - (turmaB === -1 ? 999 : turmaB)
-      || a.localeCompare(b);
-  });
-  const icones = { aluno: '🧑‍🎓', professor: '👨‍🏫', diretor: '🏫', programador: '💻' };
-
-  container.innerHTML = ordemGrupos.map(chave => {
-    const grupo = grupos.get(chave).sort((a, b) => a.email.localeCompare(b.email));
-    const nomeGrupo = chave === 'equipe'
-      ? 'Equipe da plataforma'
-      : turmaEmTexto(chave);
-    return `
+    const grupos = new Map();
+    accounts.forEach(aluno => {
+      const salas = aluno.classes?.length ? aluno.classes : ['Sem turma'];
+      salas.forEach(sala => {
+        if (!grupos.has(sala)) grupos.set(sala, []);
+        grupos.get(sala).push(aluno);
+      });
+    });
+    container.innerHTML = [...grupos.entries()].sort(([a], [b]) => a.localeCompare(b, 'pt-BR')).map(([sala, alunos]) => `
       <div class="grupo-usuarios">
-        <div class="grupo-usuarios-titulo">
-          <b>${escapeHtml(nomeGrupo)}</b>
-          <span>${grupo.length} conta(s)</span>
-        </div>
-        ${grupo.map(usuario => `
+        <div class="grupo-usuarios-titulo"><b>${escapeHtml(sala)}</b><span>${alunos.length} aluno(s)</span></div>
+        ${alunos.map(aluno => `
           <div class="item-lista">
-            ${icones[usuario.perfil] || '👤'} <b>${escapeHtml(usuario.email)}</b>
-            <span class="perfil-tag">${perfilEmTexto(usuario.perfil)}</span>
+            ${{aluno:'🧑‍🎓',professor:'👨‍🏫',diretor:'🏫',programador:'💻'}[aluno.role] || '👤'}
+            <b>${escapeHtml(aluno.email || aluno.username)}</b>
+            <span class="perfil-tag">${perfilEmTexto(aluno.role)} · ${aluno.active ? 'Ativa' : 'Suspensa'}</span>
           </div>
         `).join('')}
       </div>
+    `).join('');
+  } catch (erro) {
+    container.innerHTML = `<div class="item-lista mensagem-erro">${escapeHtml(erro.message)}</div>`;
+  }
+}
+
+async function buscarTurmasApi() {
+  const dados = await solicitarApi('/api/classes');
+  return dados.classes || [];
+}
+
+async function irParaGerenciarTurmas() {
+  if (!contaAtual || !['professor', 'diretor', 'programador'].includes(contaAtual.role)) {
+    alert('Entre como professor, diretor ou programador para administrar turmas.');
+    return;
+  }
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-gerenciar-turmas').classList.remove('hidden');
+  const ehProfessor = contaAtual.role === 'professor';
+  document.getElementById('titulo-gerenciar-turmas').innerText =
+    ehProfessor ? 'Minhas turmas' : 'Administrar turmas';
+  document.getElementById('descricao-gerenciar-turmas').innerText = ehProfessor
+    ? 'Crie salas, compartilhe o código de entrada e transfira alunos entre suas turmas.'
+    : 'Consulte todas as salas, gerencie seus responsáveis e acompanhe os alunos.';
+  document.getElementById('nome-nova-turma').value = '';
+
+  try {
+    const [turmas, contas] = await Promise.all([
+      buscarTurmasApi(),
+      ['diretor', 'programador'].includes(contaAtual.role)
+        ? solicitarApi('/api/accounts')
+        : Promise.resolve({ accounts: [] })
+    ]);
+    window.turmasApiAtuais = turmas;
+    const professores = (contas.accounts || []).filter(conta => conta.role === 'professor');
+    const seletorResponsavel = document.getElementById('campo-professor-responsavel');
+    const seletorProfessor = document.getElementById('professor-responsavel-turma');
+    const podeAtribuirProfessor = ['diretor', 'programador'].includes(contaAtual.role);
+    seletorResponsavel.classList.toggle('hidden', !podeAtribuirProfessor);
+    seletorProfessor.innerHTML = '<option value="">Sem professor atribuído</option>' +
+      professores.map(professor =>
+        `<option value="${escapeHtml(professor.id)}">${escapeHtml(professor.email || professor.username)}</option>`
+      ).join('');
+    renderizarTurmasApi(turmas, professores);
+  } catch (erro) {
+    document.getElementById('lista-turmas-api').innerHTML =
+      `<div class="item-lista mensagem-erro">${escapeHtml(erro.message)}</div>`;
+  }
+}
+
+function renderizarTurmasApi(turmas, professores = []) {
+  const container = document.getElementById('lista-turmas-api');
+  if (!turmas.length) {
+    container.innerHTML = '<div class="lista-vazia">Nenhuma turma criada ainda.</div>';
+    return;
+  }
+  const ehProfessor = contaAtual?.role === 'professor';
+  const podeAdministrarTudo = ['diretor', 'programador'].includes(contaAtual?.role);
+  container.innerHTML = turmas.map(turma => {
+    const membros = Array.isArray(turma.members) ? turma.members : [];
+    const membrosHtml = membros.length
+      ? membros.map(aluno => {
+        const destinos = turmas.filter(destino => destino.id !== turma.id);
+        const transferenciaHtml = destinos.length
+          ? `<div class="transferir-aluno">
+              <select id="destino-${turma.id}-${aluno.id}" aria-label="Sala de destino">
+                <option value="">Transferir para…</option>
+                ${destinos.map(destino => `<option value="${escapeHtml(destino.id)}">${escapeHtml(destino.name)}</option>`).join('')}
+              </select>
+              <button class="btn-secundario" onclick="transferirAlunoApi('${escapeHtml(turma.id)}', '${escapeHtml(aluno.id)}')">Transferir</button>
+            </div>`
+          : '';
+        return `
+          <div class="membro-turma">
+            <div><b>${escapeHtml(aluno.email || aluno.username)}</b><small>Aluno</small></div>
+            ${ehProfessor ? transferenciaHtml : ''}
+          </div>
+        `;
+      }).join('')
+      : '<div class="lista-vazia">Ainda não há alunos nesta turma.</div>';
+
+    const editavel = ehProfessor || podeAdministrarTudo;
+    const professorAtual = turma.teacher_id || '';
+    const controlesHtml = editavel ? `
+      <div class="controles-turma">
+        <div class="campo">
+          <label for="nome-turma-${turma.id}">Nome da turma</label>
+          <input id="nome-turma-${turma.id}" value="${escapeHtml(turma.name)}" maxlength="80">
+        </div>
+        ${podeAdministrarTudo ? `
+          <div class="campo">
+            <label for="responsavel-turma-${turma.id}">Professor responsável</label>
+            <select id="responsavel-turma-${turma.id}">
+              <option value="">Sem professor atribuído</option>
+              ${professores.map(professor => `
+                <option value="${escapeHtml(professor.id)}" ${professor.id === professorAtual ? 'selected' : ''}>
+                  ${escapeHtml(professor.email || professor.username)}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+        ` : ''}
+        <div class="acoes-turma">
+          <button class="btn-secundario" onclick="salvarTurmaApi('${escapeHtml(turma.id)}', ${podeAdministrarTudo})">Salvar alterações</button>
+          <button class="btn-perigo" onclick="excluirTurmaApi('${escapeHtml(turma.id)}', '${escapeHtml(turma.name)}')">Excluir turma</button>
+        </div>
+      </div>` : '';
+
+    return `
+      <article class="turma-card">
+        <div class="turma-card-topo">
+          <div><h3>${escapeHtml(turma.name)}</h3><span>${turma.member_count || membros.length || 0} aluno(s)</span></div>
+          ${turma.join_code ? `<button class="codigo-turma" onclick="copiarCodigoTurma('${escapeHtml(turma.join_code)}')" title="Copiar código">Código: <b>${escapeHtml(turma.join_code)}</b> <span>Copiar</span></button>` : ''}
+        </div>
+        ${!ehProfessor && turma.teacher_identifier ? `<div class="responsavel-turma">Professor: ${escapeHtml(turma.teacher_identifier)}</div>` : ''}
+        ${controlesHtml}
+        <div class="lista-membros-turma">${membrosHtml}</div>
+      </article>
     `;
   }).join('');
+}
+
+async function criarTurmaApi() {
+  const name = document.getElementById('nome-nova-turma').value.trim();
+  if (name.length < 2) {
+    alert('Digite um nome para a turma.');
+    return;
+  }
+  const payload = { name };
+  if (['diretor', 'programador'].includes(contaAtual?.role)) {
+    payload.teacherId = document.getElementById('professor-responsavel-turma').value || null;
+  }
+  try {
+    const resultado = await solicitarApi('/api/classes', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    alert(`Turma criada. Código para compartilhar: ${resultado.classroom.join_code}`);
+    await irParaGerenciarTurmas();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+async function salvarTurmaApi(classId, podeAtribuirProfessor) {
+  const payload = {
+    name: document.getElementById(`nome-turma-${classId}`).value.trim()
+  };
+  if (podeAtribuirProfessor) {
+    payload.teacherId = document.getElementById(`responsavel-turma-${classId}`).value || null;
+  }
+  try {
+    await solicitarApi(`/api/classes/${encodeURIComponent(classId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
+    await irParaGerenciarTurmas();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+async function excluirTurmaApi(classId, className) {
+  if (!confirm(`Excluir a turma "${className}"? Os alunos perderão o vínculo e as notas registradas nesta turma serão apagadas.`)) return;
+  try {
+    await solicitarApi(`/api/classes/${encodeURIComponent(classId)}`, { method: 'DELETE' });
+    await irParaGerenciarTurmas();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+async function transferirAlunoApi(sourceClassId, studentId) {
+  const seletor = document.getElementById(`destino-${sourceClassId}-${studentId}`);
+  const targetClassId = seletor?.value;
+  if (!targetClassId) {
+    alert('Escolha a turma de destino.');
+    return;
+  }
+  const destino = (window.turmasApiAtuais || []).find(turma => turma.id === targetClassId);
+  if (!confirm(`Transferir este aluno para "${destino?.name || 'a turma selecionada'}"?`)) return;
+  try {
+    await solicitarApi(`/api/classes/${encodeURIComponent(sourceClassId)}/transfer`, {
+      method: 'POST',
+      body: JSON.stringify({ studentId, targetClassId })
+    });
+    await irParaGerenciarTurmas();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+async function copiarCodigoTurma(code) {
+  try {
+    await navigator.clipboard.writeText(code);
+    alert('Código copiado.');
+  } catch {
+    prompt('Copie este código e envie aos alunos:', code);
+  }
+}
+
+async function irParaEntrarTurma() {
+  if (contaAtual?.role !== 'aluno') {
+    alert('Entre como aluno para acessar suas turmas.');
+    return;
+  }
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-entrar-turma').classList.remove('hidden');
+  document.getElementById('codigo-entrada-turma').value = '';
+  await carregarTurmasAluno();
+}
+
+async function carregarTurmasAluno() {
+  const container = document.getElementById('lista-turmas-aluno');
+  try {
+    const turmas = await buscarTurmasApi();
+    container.innerHTML = turmas.length
+      ? turmas.map(turma => `
+        <article class="turma-card">
+          <div class="turma-card-topo"><div><h3>${escapeHtml(turma.name)}</h3><span>Turma ativa</span></div></div>
+          ${turma.teacher_identifier ? `<div class="responsavel-turma">Professor: ${escapeHtml(turma.teacher_identifier)}</div>` : ''}
+        </article>
+      `).join('')
+      : '<div class="lista-vazia">Você ainda não entrou em nenhuma turma.</div>';
+  } catch (erro) {
+    container.innerHTML = `<div class="lista-vazia mensagem-erro">${escapeHtml(erro.message)}</div>`;
+  }
+}
+
+async function entrarTurmaPorCodigo() {
+  const code = document.getElementById('codigo-entrada-turma').value.trim().toUpperCase();
+  if (!code) {
+    alert('Digite o código enviado pelo professor.');
+    return;
+  }
+  try {
+    await solicitarApi('/api/classes/join', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+    document.getElementById('codigo-entrada-turma').value = '';
+    await carregarTurmasAluno();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+async function irParaContasPlataforma() {
+  if (contaAtual?.role !== 'programador') {
+    alert('Somente o Programador pode administrar contas da plataforma.');
+    return;
+  }
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-contas-plataforma').classList.remove('hidden');
+  await carregarContasPlataforma();
+}
+
+async function carregarContasPlataforma() {
+  const container = document.getElementById('lista-contas-plataforma');
+  container.innerHTML = '<div class="lista-vazia">Carregando contas…</div>';
+  try {
+    const { accounts } = await solicitarApi('/api/accounts');
+    container.innerHTML = accounts.length ? accounts.map(account => {
+      const proprio = account.id === contaAtual?.id;
+      const perfisDisponiveis = Object.entries(nomesPerfis).filter(([role]) =>
+        ['aluno', 'professor'].includes(role) || role === account.role
+      );
+      return `
+        <article class="conta-admin-card">
+          <div class="conta-admin-cabecalho">
+            <b>${escapeHtml(account.email || account.username)}${proprio ? ' · você' : ''}</b>
+            <span class="perfil-tag">${perfilEmTexto(account.role)}</span>
+          </div>
+          <div class="conta-admin-campos">
+            <div class="campo">
+              <label for="conta-email-${account.id}">E-mail</label>
+              <input type="email" id="conta-email-${account.id}" value="${escapeHtml(account.email || '')}" placeholder="Sem e-mail" ${proprio ? 'disabled' : ''}>
+            </div>
+            <div class="campo">
+              <label for="conta-usuario-${account.id}">Usuário</label>
+              <input type="text" id="conta-usuario-${account.id}" value="${escapeHtml(account.username || '')}" placeholder="Sem usuário" ${proprio ? 'disabled' : ''}>
+            </div>
+            <div class="campo">
+              <label for="conta-perfil-${account.id}">Perfil</label>
+              <select id="conta-perfil-${account.id}" ${proprio ? 'disabled' : ''}>
+                ${perfisDisponiveis.map(([role, name]) =>
+                  `<option value="${role}" ${account.role === role ? 'selected' : ''}>${name}</option>`
+                ).join('')}
+              </select>
+            </div>
+            <div class="campo">
+              <label for="conta-estado-${account.id}">Estado</label>
+              <select id="conta-estado-${account.id}" ${proprio ? 'disabled' : ''}>
+                <option value="true" ${account.active ? 'selected' : ''}>Ativa</option>
+                <option value="false" ${!account.active ? 'selected' : ''}>Suspensa</option>
+              </select>
+            </div>
+          </div>
+          <div class="conta-admin-acoes">
+            ${proprio
+              ? '<small>A conta de administrador em uso não pode ser alterada ou excluída.</small>'
+              : `<button class="btn-secundario" onclick="salvarContaPlataforma('${escapeHtml(account.id)}')">Salvar alterações</button>
+                 <button class="btn-perigo" onclick="excluirContaPlataforma('${escapeHtml(account.id)}', '${escapeHtml(account.email || account.username)}')">Excluir conta</button>`}
+          </div>
+        </article>
+      `;
+    }).join('') : '<div class="lista-vazia">Nenhuma conta cadastrada.</div>';
+  } catch (erro) {
+    container.innerHTML = `<div class="lista-vazia mensagem-erro">${escapeHtml(erro.message)}</div>`;
+  }
+}
+
+async function salvarContaPlataforma(accountId) {
+  const email = document.getElementById(`conta-email-${accountId}`).value.trim() || null;
+  const username = document.getElementById(`conta-usuario-${accountId}`).value.trim() || null;
+  const role = document.getElementById(`conta-perfil-${accountId}`).value;
+  const active = document.getElementById(`conta-estado-${accountId}`).value === 'true';
+  try {
+    await solicitarApi(`/api/accounts/${encodeURIComponent(accountId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ email, username, role, active })
+    });
+    await carregarContasPlataforma();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+async function excluirContaPlataforma(accountId, identifier) {
+  if (!confirm(`Excluir a conta "${identifier}"? O acesso será encerrado, os vínculos com turmas e as notas serão apagados. Esta ação não pode ser desfeita.`)) return;
+  try {
+    await solicitarApi(`/api/accounts/${encodeURIComponent(accountId)}`, { method: 'DELETE' });
+    const usuarios = lerUsuariosSalvos().filter(usuario => usuario.id !== accountId);
+    localStorage.setItem('educa-usuarios', JSON.stringify(usuarios));
+    if (identifier.includes('@')) localStorage.removeItem(`user_${identifier}`);
+    await carregarContasPlataforma();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+async function irParaNotas() {
+  if (!contaAtual || !['aluno', 'professor', 'diretor', 'programador'].includes(contaAtual.role)) {
+    alert('Entre na sua conta para acessar as notas.');
+    return;
+  }
+  ocultarTodasAsSecoes();
+  document.getElementById('secao-notas').classList.remove('hidden');
+  const aluno = contaAtual.role === 'aluno';
+  document.getElementById('titulo-notas').innerText = aluno ? 'Minhas notas' : 'Notas e pontos';
+  document.getElementById('descricao-notas').innerText = aluno
+    ? 'Consulte os pontos e as notas registrados nas suas atividades.'
+    : 'Registre os pontos das questões e a nota total de cada atividade.';
+  document.getElementById('form-notas').classList.toggle('hidden', aluno);
+  document.getElementById('atividade-nota').value = '';
+  questoesNotaFormulario = [{ title: '', possible: 1, earned: 0 }];
+  renderizarQuestoesNota();
+
+  if (!aluno) {
+    try {
+      const turmas = await buscarTurmasApi();
+      window.turmasApiAtuais = turmas;
+      const seletor = document.getElementById('turma-nota');
+      seletor.innerHTML = '<option value="">Selecione uma turma</option>' +
+        turmas.map(turma => `<option value="${escapeHtml(turma.id)}">${escapeHtml(turma.name)}</option>`).join('');
+      atualizarAlunosNota();
+    } catch (erro) {
+      document.getElementById('lista-notas-api').innerHTML =
+        `<div class="lista-vazia mensagem-erro">${escapeHtml(erro.message)}</div>`;
+    }
+  }
+  await carregarNotasApi();
+}
+
+function atualizarAlunosNota() {
+  const classId = document.getElementById('turma-nota').value;
+  const turma = (window.turmasApiAtuais || []).find(item => item.id === classId);
+  const seletor = document.getElementById('aluno-nota');
+  const membros = Array.isArray(turma?.members) ? turma.members : [];
+  seletor.innerHTML = '<option value="">Selecione um aluno</option>' +
+    membros.map(aluno => `<option value="${escapeHtml(aluno.id)}">${escapeHtml(aluno.email || aluno.username)}</option>`).join('');
+}
+
+function adicionarQuestaoNota() {
+  if (questoesNotaFormulario.length >= 8) {
+    alert('Cada atividade pode ter até 8 questões.');
+    return;
+  }
+  questoesNotaFormulario.push({ title: '', possible: 1, earned: 0 });
+  renderizarQuestoesNota();
+}
+
+function removerQuestaoNota(index) {
+  if (questoesNotaFormulario.length <= 1) return;
+  questoesNotaFormulario.splice(index, 1);
+  renderizarQuestoesNota();
+}
+
+function atualizarCampoQuestaoNota(index, field, value) {
+  if (!questoesNotaFormulario[index]) return;
+  questoesNotaFormulario[index][field] = field === 'title' ? value : Number(value);
+  atualizarResumoPontosNota();
+}
+
+function renderizarQuestoesNota() {
+  const container = document.getElementById('questoes-nota-formulario');
+  if (!container) return;
+  container.innerHTML = questoesNotaFormulario.map((questao, index) => `
+    <div class="questao-nota-linha">
+      <div class="questao-nota-enunciado">
+        <label for="titulo-questao-nota-${index}">Questão ${index + 1}</label>
+        <input id="titulo-questao-nota-${index}" maxlength="180" value="${escapeHtml(questao.title)}"
+          placeholder="Ex.: Questão sobre frações"
+          oninput="atualizarCampoQuestaoNota(${index}, 'title', this.value)">
+      </div>
+      <div class="questao-nota-valor">
+        <label for="valor-possivel-nota-${index}">Pontos possíveis</label>
+        <input id="valor-possivel-nota-${index}" type="number" min="0.01" step="0.01" value="${escapeHtml(questao.possible)}"
+          oninput="atualizarCampoQuestaoNota(${index}, 'possible', this.value)">
+      </div>
+      <div class="questao-nota-valor">
+        <label for="valor-obtido-nota-${index}">Pontos obtidos</label>
+        <input id="valor-obtido-nota-${index}" type="number" min="0" step="0.01" value="${escapeHtml(questao.earned)}"
+          oninput="atualizarCampoQuestaoNota(${index}, 'earned', this.value)">
+      </div>
+      ${questoesNotaFormulario.length > 1
+        ? `<button class="btn-perigo remover-questao-nota" type="button" onclick="removerQuestaoNota(${index})" aria-label="Remover questão ${index + 1}">Remover</button>`
+        : ''}
+    </div>
+  `).join('');
+  document.getElementById('btn-adicionar-questao-nota').disabled = questoesNotaFormulario.length >= 8;
+  atualizarResumoPontosNota();
+}
+
+function atualizarResumoPontosNota() {
+  const possiveis = questoesNotaFormulario.reduce((total, item) =>
+    total + (Number.isFinite(Number(item.possible)) ? Number(item.possible) : 0), 0);
+  const obtidos = questoesNotaFormulario.reduce((total, item) =>
+    total + (Number.isFinite(Number(item.earned)) ? Number(item.earned) : 0), 0);
+  const nota = possiveis > 0 ? (obtidos / possiveis) * 10 : 0;
+  const resumo = document.getElementById('resumo-pontos-nota');
+  if (resumo) {
+    resumo.innerText = `Nota total: ${obtidos.toFixed(2)} / ${possiveis.toFixed(2)} pontos · ${nota.toFixed(2)} / 10`;
+  }
+}
+
+async function salvarNotaAtividade() {
+  const classroomId = document.getElementById('turma-nota').value;
+  const studentId = document.getElementById('aluno-nota').value;
+  const activityTitle = document.getElementById('atividade-nota').value.trim();
+  if (!classroomId || !studentId || activityTitle.length < 2) {
+    alert('Selecione a turma e o aluno e informe o nome da atividade.');
+    return;
+  }
+  const questionScores = questoesNotaFormulario.map(item => ({
+    title: item.title.trim(),
+    possible: Number(item.possible),
+    earned: Number(item.earned)
+  }));
+  if (questionScores.some(item =>
+    !item.title || !Number.isFinite(item.possible) || item.possible <= 0 ||
+    !Number.isFinite(item.earned) || item.earned < 0 || item.earned > item.possible
+  )) {
+    alert('Revise o enunciado e os pontos possíveis e obtidos de cada questão.');
+    return;
+  }
+  try {
+    await solicitarApi('/api/grades', {
+      method: 'POST',
+      body: JSON.stringify({ classroomId, studentId, activityTitle, questionScores })
+    });
+    alert('Nota salva.');
+    await carregarNotasApi();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+async function carregarNotasApi() {
+  const container = document.getElementById('lista-notas-api');
+  if (!container) return;
+  container.innerHTML = '<div class="lista-vazia">Carregando notas…</div>';
+  try {
+    const { grades } = await solicitarApi('/api/grades');
+    container.innerHTML = grades.length ? grades.map(grade => {
+      const possible = Number(grade.possible_points);
+      const earned = Number(grade.earned_points);
+      const note = possible > 0 ? (earned / possible) * 10 : 0;
+      const questions = Array.isArray(grade.question_scores) ? grade.question_scores : [];
+      return `
+        <article class="nota-card">
+          <div class="nota-card-topo">
+            <div><h3>${escapeHtml(grade.activity_title)}</h3><span>${escapeHtml(grade.class_name)} · ${escapeHtml(grade.student_identifier)}</span></div>
+            <div class="nota-total"><b>${note.toFixed(2)}</b><small>/ 10</small></div>
+          </div>
+          <div class="nota-resumo-pontos">${earned.toFixed(2)} de ${possible.toFixed(2)} pontos</div>
+          <div class="nota-questoes">
+            ${questions.map((question, index) => `
+              <div><span>Questão ${index + 1}: ${escapeHtml(question.title)}</span><b>${Number(question.earned).toFixed(2)} / ${Number(question.possible).toFixed(2)}</b></div>
+            `).join('')}
+          </div>
+        </article>
+      `;
+    }).join('') : '<div class="lista-vazia">Nenhuma nota registrada ainda.</div>';
+  } catch (erro) {
+    container.innerHTML = `<div class="lista-vazia mensagem-erro">${escapeHtml(erro.message)}</div>`;
+  }
+}
+
+function voltarDoPainelNotas() {
+  if (contaAtual?.role === 'aluno') voltarParaMenuAluno();
+  else voltarParaMenuGestao();
 }
 
 function atualizarBancoAlunosLocal(novoAluno) {
@@ -1299,3 +1910,6 @@ function limparFeedback() {
   const el = document.getElementById('feedback');
   if(el) { el.className = ''; el.textContent = ''; }
 }
+
+selecionarPerfil('aluno');
+restaurarSessaoApi();
