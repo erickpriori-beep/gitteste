@@ -1911,5 +1911,18 @@ function limparFeedback() {
   if(el) { el.className = ''; el.textContent = ''; }
 }
 
+function finalizarCarregamentoInicial() {
+  const tela = document.getElementById('initial-loader');
+  if (!tela) return;
+
+  const duracao = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 120 : 460;
+  window.setTimeout(() => {
+    tela.classList.add('is-hidden');
+    tela.setAttribute('aria-hidden', 'true');
+    window.setTimeout(() => tela.remove(), 240);
+  }, duracao);
+}
+
 selecionarPerfil('aluno');
 restaurarSessaoApi();
+finalizarCarregamentoInicial();
